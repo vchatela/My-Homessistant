@@ -5,6 +5,7 @@ import sys
 import argparse
 import MySQLdb as Mdb
 import numpy
+import pyowm
 from datetime import datetime
 from abc import ABCMeta, abstractmethod
 
@@ -46,6 +47,19 @@ class DS18B20TemperatureSensor(TemperatureSensorAbstract):
 
     def __str__(self):
         return self.__read_temp_raw()
+
+
+class OutdoorAPITemperatureSensor(TemperatureSensorAbstract):
+    def __init__(self):
+        self.owm = pyowm.OWM('124db9b65e41932220cdc2392bad7ebf')
+
+    def get_temperature(self):
+        observation = self.owm.weather_at_place('Lescar,fr')
+        w = observation.get_weather()
+        if 'temp' in w.get_temperature('celsius'):
+            return w.get_temperature('celsius')['temp']
+        else:
+            return None
 
 
 class Application:
@@ -95,12 +109,13 @@ class Application:
         except Mdb.Error, e:
             self.print_error(str(e))
 
-    def insert_temperature_db(self, temperature):
+    def insert_temperature_db(self, temperature_in, temperature_out):
         try:
             cursor = self.database.cursor()
             # Date - In - Out - State
-            query = "INSERT INTO Temperature VALUES (TIMESTAMP(\'{0}\'),{1},NULL,0)".format(str(datetime.now()),
-                                                                                            str(temperature))
+            query = "INSERT INTO Temperature VALUES (TIMESTAMP(\'{0}\'),{1},{2},0)".format(str(datetime.now()),
+                                                                                           str(temperature_in),
+                                                                                           str(temperature_out))
             self.print_debug(query)
             cursor.execute(query)
             self.database.commit()
@@ -109,6 +124,10 @@ class Application:
         finally:
             if self.database:
                 self.database.close()
+
+    def get_out_temp(self):
+        out_sensor = OutdoorAPITemperatureSensor()
+        return out_sensor.get_temperature()
 
 
 # Main
@@ -120,10 +139,11 @@ if __name__ == "__main__":
     app.load_sensors()
     # Get Average temp of all sensors
     temp_avg = app.get_average_temp()
+    temp_out = app.get_out_temp()
 
     # Add to database
     app.connect_database(db_login="home_user", db_password="", db_base="Homessistant")
     if not temp_avg is None:
-        app.insert_temperature_db(temp_avg)
+        app.insert_temperature_db(temp_avg, temp_out)
     else:
         app.print_error("Error while getting average temperature.")
