@@ -3,9 +3,10 @@ import os
 import glob
 import sys
 import argparse
-import MySQLdb as mdb
-
+import MySQLdb as Mdb
 import numpy
+from datetime import datetime
+from abc import ABCMeta, abstractmethod
 
 os.system('/sbin//modprobe w1-gpio')
 os.system('/sbin//modprobe w1-therm')
@@ -13,7 +14,15 @@ os.system('/sbin//modprobe w1-therm')
 wiring_pin_rpi = 29
 
 
-class DS18B20TemperatureSensor:
+class TemperatureSensorAbstract:
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def get_temperature(self):
+        raise NotImplementedError('Subclasses must override get_temperature()!')
+
+
+class DS18B20TemperatureSensor(TemperatureSensorAbstract):
     base_dir = '/sys/bus/w1/devices/'
 
     def __init__(self, device_dir):
@@ -25,6 +34,7 @@ class DS18B20TemperatureSensor:
             time.sleep(0.2)
             lines = self.__read_temp_raw()
         equals_pos = lines[1].find('t=')
+        temp_c = None
         if equals_pos != -1:
             temp_string = lines[1][equals_pos + 2:]
             temp_c = float(temp_string) / 1000.0
@@ -34,9 +44,14 @@ class DS18B20TemperatureSensor:
         with open(self.device_file, 'r') as device_file:
             return device_file.readlines()
 
+    def __str__(self):
+        return self.__read_temp_raw()
+
 
 class Application:
     def __init__(self):
+        self.sensors_list = []
+        self.database = None
         # Arguments
         parser = argparse.ArgumentParser()
         parser.add_argument("--debug", action='store_true', help="Add debug outputs")
@@ -46,12 +61,18 @@ class Application:
         else:
             self.__debug = False
 
+    ##Printers
     def print_debug(self, str_dbg):
         if self.__debug:
             print "DEBUG : " + str_dbg
 
+    @staticmethod
+    def print_error(str_error):
+        print "ERROR : " + str_error
+        sys.exit(-1)
+
+    ##Sensors
     def load_sensors(self):
-        self.sensors_list = []
         for ds_sensor_dir in glob.glob(DS18B20TemperatureSensor.base_dir + '28*'):
             self.sensors_list.append(DS18B20TemperatureSensor(ds_sensor_dir))
             # If other sensors type - add here
@@ -66,22 +87,29 @@ class Application:
         self.print_debug("Average temp is " + str(average_temp) + " C")
         return average_temp
 
+    ##Database
     def connect_database(self, db_login, db_password, db_base):
         # Connexion
-        self.database = mdb.connect('localhost', db_login, db_password, db_base)
+        try:
+            self.database = Mdb.connect('localhost', db_login, db_password, db_base)
+        except Mdb.Error, e:
+            self.print_error(str(e))
 
-    def insert_temperature_db(self):
+    def insert_temperature_db(self, temperature):
         try:
             cursor = self.database.cursor()
-            cursor.execute("INSERT INTO Temperature VALUES (0, CURRENT_DATE(), (CURRENT_TIME()), %f, %s)" %(None,None))
+            # Date - In - Out - State
+            query = "INSERT INTO Temperature VALUES (TIMESTAMP(\'{0}\'),{1},NULL,0)".format(str(datetime.now()),
+                                                                                            str(temperature))
+            self.print_debug(query)
+            cursor.execute(query)
             self.database.commit()
-        except mdb.Error, e:
-            print "Error %d: %s \n" % (e.args[0], e.args[1])
-            sys.exit(1)
-
+        except Mdb.Error, e:
+            self.print_error(str(e))
         finally:
             if self.database:
                 self.database.close()
+
 
 # Main
 
@@ -94,5 +122,8 @@ if __name__ == "__main__":
     temp_avg = app.get_average_temp()
 
     # Add to database
-    app.connect_database(db_login="home_user", db_password="", db_base="Homessitant")
-    app.insert_temperature_db()
+    app.connect_database(db_login="home_user", db_password="", db_base="Homessistant")
+    if not temp_avg is None:
+        app.insert_temperature_db(temp_avg)
+    else:
+        app.print_error("Error while getting average temperature.")

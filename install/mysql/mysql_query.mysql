@@ -1,0 +1,26 @@
+#Create User
+#TODO : v?rifier requ?te !
+CREATE USER 'home_user'@'localhost';GRANT USAGE ON *.* TO 'home_user'@'localhost' WITH MAX_QUERIES_PER_HOUR 0 MAX_CONNECTIONS_PER_HOUR 0 MAX_UPDATES_PER_HOUR 0 MAX_USER_CONNECTIONS 0;GRANT ALL PRIVILEGES ON `home_user\_%`.* TO 'home_user'@'localhost';
+#Create Database
+CREATE DATABASE Homesssistant;
+USE Homessistant;
+#Temperature Table
+CREATE TABLE Temperature (
+date DATETIME PRIMARY KEY,
+temperature_in FLOAT NOT NULL,
+temperature_out FLOAT,
+heater_state TINYINT(1) NOT NULL
+)
+#Humidity Table
+CREATE TABLE Humidity (
+date DATETIME PRIMARY KEY,
+humidity_in FLOAT NOT NULL,
+humidity_out FLOAT,
+heater_state TINYINT(1) NOT NULL
+)
+#Velux Table
+CREATE TABLE Velux (
+date DATETIME PRIMARY KEY,
+is_open TINYINT(1) NOT NULL
+)
+#Programmation Table
