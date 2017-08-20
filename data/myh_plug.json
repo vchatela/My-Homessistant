@@ -1,6 +1,7 @@
 {
-  "state":"ON",
-  "type":"HEATER",
+  "state": "ON",
+  "type": "HEATER",
   "ref_temp": 20.0,
-  "remain_time_db" : 10
+  "remain_time_db": 10,
+  "default_remain_time_db": 10
 }

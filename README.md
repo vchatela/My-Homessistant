@@ -1,6 +1,6 @@
-#My-Homessitant
+# My-Homessitant
 
-##Architecture
+## Architecture
 - api : restAPI
 	- rest.py : flask implementation
 - bin : contain binaries
@@ -20,5 +20,5 @@
 	- env
 		- myh_env.sh : set environment
 		
-##Environment
+## Environment
 myh_home = 
