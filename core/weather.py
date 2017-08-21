@@ -3,7 +3,7 @@ import os
 import glob
 import sys
 import argparse
-import simplejson
+import json
 import Adafruit_DHT
 import MySQLdb as Mdb
 import numpy
@@ -97,7 +97,9 @@ class Application:
     def __init__(self, myh_plug_file):
         self.sensors_list = []
         self.database = None
-        # self.myh_plug_dict = simplejson.loads(myh_plug_file)
+        self.__myh_plug_file = myh_plug_file
+        with open(myh_plug_file, 'r') as myh_plug_file_data:
+            self.__myh_plug_dict = json.load(myh_plug_file_data)
         # Arguments
         parser = argparse.ArgumentParser()
         parser.add_argument("--debug", action='store_true', help="Add debug outputs")
@@ -106,6 +108,19 @@ class Application:
             self.__debug = True
         else:
             self.__debug = False
+
+    def get_remain_time_db(self):
+        return self.__myh_plug_dict["remain_time_db"]
+
+    def decrease_remain_time_db(self):
+        self.__myh_plug_dict["remain_time_db"] -= 1
+        with open(self.__myh_plug_file, 'w') as f:
+            json.dump(self.__myh_plug_dict, f)
+
+    def reset_remain_time_db(self):
+        self.__myh_plug_dict["remain_time_db"] = self.__myh_plug_dict["default_remain_time_db"]
+        with open(self.__myh_plug_file, 'w') as f:
+            json.dump(self.__myh_plug_dict, f)
 
     ##Printers
     def print_debug(self, str_dbg):
@@ -165,7 +180,7 @@ class Application:
         except Mdb.Error, e:
             self.print_error(str(e))
 
-    def insert_temperature_db(self, temperature_in, temperature_out):
+    def insert_db(self, temperature_in, temperature_out, humidity_in, humidity_out):
         try:
             cursor = self.database.cursor()
             # Date - In - Out - State
@@ -173,35 +188,19 @@ class Application:
                 temperature_out = "NULL"
             if temperature_in is None:
                 temperature_in = "NULL"
-            query = "INSERT INTO Temperature VALUES (TIMESTAMP(\'{0}\'),{1},{2},0)".format(str(datetime.now()),
-                                                                                           str(temperature_in),
-                                                                                           str(temperature_out))
+            query = "INSERT INTO Weather VALUES (TIMESTAMP(\'{0}\'),{1},{2},{3},{4},0)".format(str(datetime.now()),
+                                                                                               str(temperature_in),
+                                                                                               str(temperature_out),
+                                                                                               str(humidity_in),
+                                                                                               str(humidity_out))
             self.print_debug(query)
             cursor.execute(query)
             self.database.commit()
         except Mdb.Error, e:
             self.print_error(str(e))
-
-    def insert_humidity(self, humidity_in, humidity_out):
-        try:
-            cursor = self.database.cursor()
-            # Date - In - Out - State
-            if humidity_in is None:
-                humidity_in = "NULL"
-            if humidity_out is None:
-                humidity_out = "NULL"
-            query = "INSERT INTO Humidity VALUES (TIMESTAMP(\'{0}\'),{1},{2},0)".format(str(datetime.now()),
-                                                                                        str(humidity_in),
-                                                                                        str(humidity_out))
-            self.print_debug(query)
-            cursor.execute(query)
-            self.database.commit()
-        except Mdb.Error, e:
-            self.print_error(str(e))
-
-    def close_database(self):
-        if self.database:
-            self.database.close()
+        finally:
+            if self.database:
+                self.database.close()
 
 
 # Main
@@ -210,36 +209,37 @@ if __name__ == "__main__":
     app = Application(myh_plug_file=os.path.abspath(
         os.path.join(os.path.abspath(__file__), os.pardir, os.pardir, "data", "myh_plug.json")))
 
-    # if app.myh_plug_dict["remain_time_db"] == 0:
+    remain_time_db = int(app.get_remain_time_db())
 
-    # Insert into database
-    # Determine Average Temperature from all sensors
-    # Load sensors
-    app.load_sensors()
-    # Get Average temp of all sensors
-    temp_avg = app.get_average_temp()
-    temp_out = app.get_out_temp()
-    # Get Average humidity
-    hum_avg = app.get_humidity()
-    hum_out = app.get_out_humidity()
+    if remain_time_db == 0:
 
-    # Add to database
-    app.connect_database(db_login="home_user", db_password="", db_base="Homessistant")
-    app.insert_temperature_db(temp_avg, temp_out)
-    app.insert_humidity(hum_avg, hum_out)
+        # Insert into database
+        # Determine Average Temperature from all sensors
+        # Load sensors
+        app.load_sensors()
+        # Get Average temp of all sensors
+        temp_avg = app.get_average_temp()
+        temp_out = app.get_out_temp()
+        # Get Average humidity
+        hum_avg = app.get_humidity()
+        hum_out = app.get_out_humidity()
 
-    # app.myh_plug_dict["remain_time_db"] = app.myh_plug_dict["default_remain_time_db"]
+        # Add to database
+        app.connect_database(db_login="home_user", db_password="", db_base="Homessistant")
+        app.insert_db(temp_avg, temp_out, hum_avg, hum_out)
 
-    # else:
-    #     if app.myh_plug_dict["remain_time_db"] < 0:
-    #         app.myh_plug_dict["remain_time_db"] = app.myh_plug_dict["default_remain_time_db"]
-    #     else:
-    #         app.myh_plug_dict["remain_time_db"] -= 1
-    #
-    # app.print_debug("Remaining time to db : " + str(app.myh_plug_dict["remain_time_db"]))
-    #
-    # with open(app.myh_plug_file, 'w') as f:
-    #     simplejson.dump(app.myh_plug_dict, f)
+        app.reset_remain_time_db()
+
+    else:
+        if remain_time_db < 0:
+            app.reset_remain_time_db()
+        else:
+            app.decrease_remain_time_db()
+
+    next_remain_time_db = app.get_remain_time_db()
+    app.print_debug("Next remaining time to db : " + str(next_remain_time_db))
+
+
 
 
 
