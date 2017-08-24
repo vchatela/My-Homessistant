@@ -19,11 +19,11 @@ MYH_HOME="$1"
 #write out current crontab
 crontab -l > mycron
 #echo new cron into cron file
-echo "* * * * * /usr/bin/python $MYH_HOME/core/weather.py --info " >> mycron
+echo "* * * * * export MYH_HOME=$MYH_HOME ; /usr/bin/python $MYH_HOME/core/weather.py --info " >> mycron
 #install new cron file
 crontab mycron
 rm mycron
 
 # bashrc or zshrc source myh_rc
-echo -e "\nexport MYH_HOME='$MYH_HOME'\n" >> ~/.zshrc
+#echo -e "\nexport MYH_HOME='$MYH_HOME'\n" >> ~/.zshrc
 echo -e "\nexport MYH_HOME='$MYH_HOME'\n" >> ~/.bashrc
