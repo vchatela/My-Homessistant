@@ -1,13 +1,12 @@
 import time
 import os
 import glob
-import sys
-import argparse
 import json
 import Adafruit_DHT
 import MySQLdb as Mdb
 import numpy
 import pyowm
+import logging
 from datetime import datetime
 from abc import ABCMeta, abstractmethod
 
@@ -94,20 +93,16 @@ class OutdoorAPITemperatureSensor(TemperatureSensorAbstract):
 
 
 class Application:
-    def __init__(self, myh_plug_file):
+    def __init__(self):
         self.sensors_list = []
         self.database = None
-        self.__myh_plug_file = myh_plug_file
-        with open(myh_plug_file, 'r') as myh_plug_file_data:
+        # Dicts
+        self.__myh_plug_file = os.path.join(os.environ["MYH_HOME"], "data", "myh_plug.json")
+        with open(self.__myh_plug_file, 'r') as myh_plug_file_data:
             self.__myh_plug_dict = json.load(myh_plug_file_data)
-        # Arguments
-        parser = argparse.ArgumentParser()
-        parser.add_argument("--debug", action='store_true', help="Add debug outputs")
-        args = parser.parse_args()
-        if args.debug:
-            self.__debug = True
-        else:
-            self.__debug = False
+        # Logger
+        logfile = os.path.join(os.environ["MYH_HOME"], 'logs', 'weather.log')
+        logging.basicConfig(filename=logfile, level=logging.DEBUG, format='%(asctime)s %(message)s')
 
     def get_remain_time_db(self):
         return self.__myh_plug_dict["remain_time_db"]
@@ -121,16 +116,6 @@ class Application:
         self.__myh_plug_dict["remain_time_db"] = self.__myh_plug_dict["default_remain_time_db"]
         with open(self.__myh_plug_file, 'w') as f:
             json.dump(self.__myh_plug_dict, f)
-
-    ##Printers
-    def print_debug(self, str_dbg):
-        if self.__debug:
-            print "DEBUG : " + str_dbg
-
-    @staticmethod
-    def print_error(str_error):
-        print "ERROR : " + str_error
-        sys.exit(-1)
 
     ##Sensors
     def load_sensors(self):
@@ -146,11 +131,11 @@ class Application:
             temp_tmp = sensor.get_temperature()
             temp_list.append(temp_tmp)
             if hasattr(sensor, "device_file"):
-                self.print_debug("Temperature of " + sensor.device_file + " is " + str(temp_tmp) + " C")
+                logging.debug("Temperature of " + sensor.device_file + " is " + str(temp_tmp) + " C")
             else:
-                self.print_debug("Temperature is " + str(temp_tmp))
+                logging.debug("Temperature is " + str(temp_tmp))
         average_temp = numpy.average(temp_list)
-        self.print_debug("Average temp is " + str(average_temp) + " C")
+        logging.debug("Average temp is " + str(average_temp) + " C")
         return average_temp
 
     def get_humidity(self):
@@ -159,9 +144,9 @@ class Application:
             if "get_humidity" in dir(sensor):
                 hum_tmp = sensor.get_humidity()
                 hum_list.append(hum_tmp)
-                self.print_debug("Humidity is " + str(hum_tmp))
+                logging.debug("Humidity is " + str(hum_tmp))
         average_hum = numpy.average(hum_list)
-        self.print_debug("Average humidity is " + str(average_hum) + " %")
+        logging.debug("Average humidity is " + str(average_hum) + " %")
         return average_hum
 
     def get_out_temp(self):
@@ -178,7 +163,8 @@ class Application:
         try:
             self.database = Mdb.connect('localhost', db_login, db_password, db_base)
         except Mdb.Error, e:
-            self.print_error(str(e))
+            logging.error(str(e))
+            exit(-1)
 
     def insert_db(self, temperature_in, temperature_out, humidity_in, humidity_out):
         try:
@@ -193,11 +179,12 @@ class Application:
                                                                                                str(temperature_out),
                                                                                                str(humidity_in),
                                                                                                str(humidity_out))
-            self.print_debug(query)
+            logging.debug(query)
             cursor.execute(query)
             self.database.commit()
         except Mdb.Error, e:
-            self.print_error(str(e))
+            logging.error(str(e))
+            exit(-1)
         finally:
             if self.database:
                 self.database.close()
@@ -206,8 +193,7 @@ class Application:
 # Main
 
 if __name__ == "__main__":
-    app = Application(myh_plug_file=os.path.abspath(
-        os.path.join(os.path.abspath(__file__), os.pardir, os.pardir, "data", "myh_plug.json")))
+    app = Application()
 
     remain_time_db = int(app.get_remain_time_db())
 
@@ -237,10 +223,4 @@ if __name__ == "__main__":
             app.decrease_remain_time_db()
 
     next_remain_time_db = app.get_remain_time_db()
-    app.print_debug("Next remaining time to db : " + str(next_remain_time_db))
-
-
-
-
-
-    # Turn On/Off Plug
+    logging.debug("Next remaining time to db : " + str(next_remain_time_db))
