@@ -11,11 +11,7 @@ temperature_in FLOAT NOT NULL,
 temperature_out FLOAT,
 humidity_in FLOAT NOT NULL,
 humidity_out FLOAT,
-heater_state TINYINT(1) NOT NULL
-)
-#Velux Table
-CREATE TABLE Velux (
-date DATETIME PRIMARY KEY,
-is_open TINYINT(1) NOT NULL
+heater_state TINYINT(1) NOT NULL,
+is_velux_open TINYINT(1)
 )
 #Programmation Table

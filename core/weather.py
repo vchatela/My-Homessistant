@@ -174,7 +174,7 @@ class Application:
                 temperature_out = "NULL"
             if temperature_in is None:
                 temperature_in = "NULL"
-            query = "INSERT INTO Weather VALUES (TIMESTAMP(\'{0}\'),{1},{2},{3},{4},0)".format(str(datetime.now()),
+            query = "INSERT INTO Weather VALUES (TIMESTAMP(\'{0}\'),{1},{2},{3},{4},0,NULL)".format(str(datetime.now()),
                                                                                                str(temperature_in),
                                                                                                str(temperature_out),
                                                                                                str(humidity_in),
