@@ -100,6 +100,9 @@ class Application:
         self.__myh_plug_file = os.path.join(os.environ["MYH_HOME"], "data", "myh_plug.json")
         with open(self.__myh_plug_file, 'r') as myh_plug_file_data:
             self.__myh_plug_dict = json.load(myh_plug_file_data)
+        self.__weather_file = os.path.join(os.environ["MYH_HOME"], "data", "weather.json")
+        with open(self.__weather_file, 'r') as weather_file:
+            self.__weather_dict = json.load(weather_file)
         # Logger
         logfile = os.path.join(os.environ["MYH_HOME"], 'logs', 'weather.log')
         logging.basicConfig(filename=logfile, level=logging.DEBUG, format='%(asctime)s %(message)s')
@@ -174,11 +177,14 @@ class Application:
                 temperature_out = "NULL"
             if temperature_in is None:
                 temperature_in = "NULL"
-            query = "INSERT INTO Weather VALUES (TIMESTAMP(\'{0}\'),{1},{2},{3},{4},0,NULL)".format(str(datetime.now()),
-                                                                                               str(temperature_in),
-                                                                                               str(temperature_out),
-                                                                                               str(humidity_in),
-                                                                                               str(humidity_out))
+            velux_state = "NULL"
+            query = "INSERT INTO Weather VALUES (TIMESTAMP(\'{0}\'),{1},{2},{3},{4},0,{5})".format(str(datetime.now()),
+                                                                                                   str(temperature_in),
+                                                                                                   str(
+                                                                                                       temperature_out),
+                                                                                                   str(humidity_in),
+                                                                                                   str(humidity_out),
+                                                                                                   str(velux_state))
             logging.debug(query)
             cursor.execute(query)
             self.database.commit()
@@ -189,6 +195,14 @@ class Application:
             if self.database:
                 self.database.close()
 
+    def update_weather_data(self, temp_avg, temp_out, hum_avg, hum_out):
+        self.__weather_dict["temp_avg"] = temp_avg
+        self.__weather_dict["temp_out"] = temp_out
+        self.__weather_dict["hum_avg"] = hum_avg
+        self.__weather_dict["hum_out"] = hum_out
+        with open(self.__weather_file, 'w') as f:
+            json.dump(self.__weather_dict, f)
+
 
 # Main
 
@@ -197,25 +211,24 @@ if __name__ == "__main__":
 
     remain_time_db = int(app.get_remain_time_db())
 
+    # Insert into database
+    # Determine Average Temperature from all sensors
+    # Load sensors
+    app.load_sensors()
+    # Get Average temp of all sensors
+    temp_avg = app.get_average_temp()
+    temp_out = app.get_out_temp()
+    # Get Average humidity
+    hum_avg = app.get_humidity()
+    hum_out = app.get_out_humidity()
+
+    app.update_weather_data(temp_avg, temp_out, hum_avg, hum_out)
+
     if remain_time_db == 0:
-
-        # Insert into database
-        # Determine Average Temperature from all sensors
-        # Load sensors
-        app.load_sensors()
-        # Get Average temp of all sensors
-        temp_avg = app.get_average_temp()
-        temp_out = app.get_out_temp()
-        # Get Average humidity
-        hum_avg = app.get_humidity()
-        hum_out = app.get_out_humidity()
-
         # Add to database
         app.connect_database(db_login="home_user", db_password="", db_base="Homessistant")
         app.insert_db(temp_avg, temp_out, hum_avg, hum_out)
-
         app.reset_remain_time_db()
-
     else:
         if remain_time_db < 0:
             app.reset_remain_time_db()
