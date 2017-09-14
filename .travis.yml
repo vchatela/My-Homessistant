@@ -13,6 +13,8 @@ python:
   - "3.2"
   - "3.3"
 # command to install dependencies
+before_install :
+  - cd install ; ./setup.sh
 script: python tests/test_installer.py
 branches:
   only:

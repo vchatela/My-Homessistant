@@ -7,6 +7,7 @@ import MySQLdb as Mdb
 import numpy
 import pyowm
 import logging
+from logging.handlers import RotatingFileHandler
 from datetime import datetime
 from abc import ABCMeta, abstractmethod
 
@@ -97,28 +98,37 @@ class Application:
         self.sensors_list = []
         self.database = None
         # Dicts
-        self.__myh_plug_file = os.path.join(os.environ["MYH_HOME"], "data", "myh_plug.json")
-        with open(self.__myh_plug_file, 'r') as myh_plug_file_data:
-            self.__myh_plug_dict = json.load(myh_plug_file_data)
+        self.__myh_db_file = os.path.join(os.environ["MYH_HOME"], "data", "myh_db.json")
+        with open(self.__myh_db_file, 'r') as myh_db_file_data:
+            self.__myh_db_dict = json.load(myh_db_file_data)
         self.__weather_file = os.path.join(os.environ["MYH_HOME"], "data", "weather.json")
         with open(self.__weather_file, 'r') as weather_file:
             self.__weather_dict = json.load(weather_file)
         # Logger
+        log_formatter = logging.Formatter('%(asctime)s %(levelname)s %(funcName)s(%(lineno)d) %(message)s')
         logfile = os.path.join(os.environ["MYH_HOME"], 'logs', 'weather.log')
-        logging.basicConfig(filename=logfile, level=logging.DEBUG, format='%(asctime)s %(message)s')
+        my_handler = RotatingFileHandler(logfile, mode='a', maxBytes=5 * 1024 * 1024,
+                                         backupCount=2, encoding=None, delay=0)
+        my_handler.setFormatter(log_formatter)
+        my_handler.setLevel(logging.DEBUG)
+
+        self.app_log = logging.getLogger('root')
+        self.app_log.setLevel(logging.DEBUG)
+
+        self.app_log.addHandler(my_handler)
 
     def get_remain_time_db(self):
-        return self.__myh_plug_dict["remain_time_db"]
+        return self.__myh_db_dict["remain_time_db"]
 
     def decrease_remain_time_db(self):
-        self.__myh_plug_dict["remain_time_db"] -= 1
-        with open(self.__myh_plug_file, 'w') as f:
-            json.dump(self.__myh_plug_dict, f)
+        self.__myh_db_dict["remain_time_db"] -= 1
+        with open(self.__myh_db_file, 'w') as f:
+            json.dump(self.__myh_db_dict, f)
 
     def reset_remain_time_db(self):
-        self.__myh_plug_dict["remain_time_db"] = self.__myh_plug_dict["default_remain_time_db"]
-        with open(self.__myh_plug_file, 'w') as f:
-            json.dump(self.__myh_plug_dict, f)
+        self.__myh_db_dict["remain_time_db"] = self.__myh_db_dict["default_remain_time_db"]
+        with open(self.__myh_db_file, 'w') as f:
+            json.dump(self.__myh_db_dict, f)
 
     ##Sensors
     def load_sensors(self):
@@ -132,13 +142,17 @@ class Application:
         temp_list = []
         for sensor in self.sensors_list:
             temp_tmp = sensor.get_temperature()
+            if temp_tmp is None:
+                continue
             temp_list.append(temp_tmp)
             if hasattr(sensor, "device_file"):
-                logging.debug("Temperature of " + sensor.device_file + " is " + str(temp_tmp) + " C")
+                self.app_log.debug("Temperature of " + sensor.device_file + " is " + str(temp_tmp) + " C")
             else:
-                logging.debug("Temperature is " + str(temp_tmp))
+                self.app_log.debug("Temperature is " + str(temp_tmp))
+        if temp_list == []:
+            return None
         average_temp = numpy.average(temp_list)
-        logging.debug("Average temp is " + str(average_temp) + " C")
+        self.app_log.debug("Average temp is " + str(average_temp) + " C")
         return average_temp
 
     def get_humidity(self):
@@ -147,9 +161,9 @@ class Application:
             if "get_humidity" in dir(sensor):
                 hum_tmp = sensor.get_humidity()
                 hum_list.append(hum_tmp)
-                logging.debug("Humidity is " + str(hum_tmp))
+                self.app_log.debug("Humidity is " + str(hum_tmp))
         average_hum = numpy.average(hum_list)
-        logging.debug("Average humidity is " + str(average_hum) + " %")
+        self.app_log.debug("Average humidity is " + str(average_hum) + " %")
         return average_hum
 
     def get_out_temp(self):
@@ -166,7 +180,7 @@ class Application:
         try:
             self.database = Mdb.connect('localhost', db_login, db_password, db_base)
         except Mdb.Error, e:
-            logging.error(str(e))
+            self.app_log.error(str(e))
             exit(-1)
 
     def insert_db(self, temperature_in, temperature_out, humidity_in, humidity_out):
@@ -177,6 +191,10 @@ class Application:
                 temperature_out = "NULL"
             if temperature_in is None:
                 temperature_in = "NULL"
+            if humidity_in is None:
+                humidity_in = "NULL"
+            if humidity_out is None:
+                humidity_out = "NULL"
             velux_state = "NULL"
             query = "INSERT INTO Weather VALUES (TIMESTAMP(\'{0}\'),{1},{2},{3},{4},0,{5})".format(str(datetime.now()),
                                                                                                    str(temperature_in),
@@ -185,11 +203,11 @@ class Application:
                                                                                                    str(humidity_in),
                                                                                                    str(humidity_out),
                                                                                                    str(velux_state))
-            logging.debug(query)
+            self.app_log.debug(query)
             cursor.execute(query)
             self.database.commit()
         except Mdb.Error, e:
-            logging.error(str(e))
+            self.app_log.error(str(e))
             exit(-1)
         finally:
             if self.database:
@@ -236,4 +254,4 @@ if __name__ == "__main__":
             app.decrease_remain_time_db()
 
     next_remain_time_db = app.get_remain_time_db()
-    logging.debug("Next remaining time to db : " + str(next_remain_time_db))
+    app.app_log.debug("Next remaining time to db : " + str(next_remain_time_db))
