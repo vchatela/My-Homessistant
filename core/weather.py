@@ -1,5 +1,6 @@
 import time
 import os
+import argparse
 import glob
 import json
 import Adafruit_DHT
@@ -97,6 +98,10 @@ class Application:
     def __init__(self):
         self.sensors_list = []
         self.database = None
+        # Args Parse
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--insert", help="ignore verification of db_time",action="store_true")
+        self.args = parser.parse_args()
         # Dicts
         self.__myh_db_file = os.path.join(os.environ["MYH_HOME"], "data", "myh_db.json")
         with open(self.__myh_db_file, 'r') as myh_db_file_data:
@@ -109,18 +114,18 @@ class Application:
         logfile = os.path.join(os.environ["MYH_HOME"], 'logs', 'weather.log')
 
         file_handler = RotatingFileHandler(logfile, mode='a', maxBytes=5 * 1024 * 1024,
-                                         backupCount=2, encoding=None, delay=0)
+                                           backupCount=2, encoding=None, delay=0)
         file_handler.setFormatter(log_formatter)
         file_handler.setLevel(logging.DEBUG)
 
         console_handler = logging.StreamHandler()
         console_handler.setFormatter(log_formatter)
 
-        self.app_log = logging.getLogger('root')
-        self.app_log.setLevel(logging.DEBUG)
+        self.logger = logging.getLogger('root')
+        self.logger.setLevel(logging.DEBUG)
 
-        self.app_log.addHandler(console_handler)
-        self.app_log.addHandler(file_handler)
+        self.logger.addHandler(console_handler)
+        self.logger.addHandler(file_handler)
 
     def get_remain_time_db(self):
         return self.__myh_db_dict["remain_time_db"]
@@ -134,6 +139,10 @@ class Application:
         self.__myh_db_dict["remain_time_db"] = self.__myh_db_dict["default_remain_time_db"]
         with open(self.__myh_db_file, 'w') as f:
             json.dump(self.__myh_db_dict, f)
+
+    def get_db_credentials(self):
+        return self.__myh_db_dict["db_user"], self.__myh_db_dict["db_password"], self.__myh_db_dict["db_base"], \
+               self.__myh_db_dict["db_hostname"]
 
     ##Sensors
     def load_sensors(self):
@@ -151,13 +160,13 @@ class Application:
                 continue
             temp_list.append(temp_tmp)
             if hasattr(sensor, "device_file"):
-                self.app_log.debug("Temperature of " + sensor.device_file + " is " + str(temp_tmp) + " C")
+                self.logger.debug("Temperature of " + sensor.device_file + " is " + str(temp_tmp) + " C")
             else:
-                self.app_log.debug("Temperature is " + str(temp_tmp))
+                self.logger.debug("Temperature is " + str(temp_tmp))
         if temp_list == []:
             return None
         average_temp = numpy.average(temp_list)
-        self.app_log.debug("Average temp is " + str(average_temp) + " C")
+        self.logger.debug("Average temp is " + str(average_temp) + " C")
         return average_temp
 
     def get_humidity(self):
@@ -166,9 +175,9 @@ class Application:
             if "get_humidity" in dir(sensor):
                 hum_tmp = sensor.get_humidity()
                 hum_list.append(hum_tmp)
-                self.app_log.debug("Humidity is " + str(hum_tmp))
+                self.logger.debug("Humidity is " + str(hum_tmp))
         average_hum = numpy.average(hum_list)
-        self.app_log.debug("Average humidity is " + str(average_hum) + " %")
+        self.logger.debug("Average humidity is " + str(average_hum) + " %")
         return average_hum
 
     def get_out_temp(self):
@@ -180,12 +189,13 @@ class Application:
         return out_sensor.get_humidity()
 
     ##Database
-    def connect_database(self, db_login, db_password, db_base):
+    def connect_database(self):
         # Connexion
+        db_login, db_password, db_base, db_hostname = self.get_db_credentials()
         try:
             self.database = Mdb.connect('localhost', db_login, db_password, db_base)
         except Mdb.Error, e:
-            self.app_log.error(str(e))
+            self.logger.error(str(e))
             exit(-1)
 
     def insert_db(self, temperature_in, temperature_out, humidity_in, humidity_out):
@@ -208,11 +218,11 @@ class Application:
                                                                                                    str(humidity_in),
                                                                                                    str(humidity_out),
                                                                                                    str(velux_state))
-            self.app_log.debug(query)
+            self.logger.debug(query)
             cursor.execute(query)
             self.database.commit()
         except Mdb.Error, e:
-            self.app_log.error(str(e))
+            self.logger.error(str(e))
             exit(-1)
         finally:
             if self.database:
@@ -247,9 +257,16 @@ if __name__ == "__main__":
 
     app.update_weather_data(temp_avg, temp_out, hum_avg, hum_out)
 
+    if app.args.insert:
+        app.logger.info("Forced Insertion into DB by using --insert")
+        app.connect_database()
+        app.insert_db(temp_avg, temp_out, hum_avg, hum_out)
+        # Do not change remain_time_db
+        exit(0)
+
     if remain_time_db == 0:
         # Add to database
-        app.connect_database(db_login="home_user", db_password="", db_base="Homessistant")
+        app.connect_database()
         app.insert_db(temp_avg, temp_out, hum_avg, hum_out)
         app.reset_remain_time_db()
     else:
@@ -259,4 +276,4 @@ if __name__ == "__main__":
             app.decrease_remain_time_db()
 
     next_remain_time_db = app.get_remain_time_db()
-    app.app_log.debug("Next remaining time to db : " + str(next_remain_time_db))
+    app.logger.debug("Next remaining time to db : " + str(next_remain_time_db))
