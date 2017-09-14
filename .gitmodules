@@ -1,3 +1,3 @@
-[submodule "./libs/radioRelais"]
-	path = ./libs/radioRelais
+[submodule "libs/radio_relais"]
+	path = libs/radio_relais
 	url = https://github.com/vchatela/Chacon_RadioRelais.git
