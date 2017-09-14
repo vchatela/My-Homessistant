@@ -107,15 +107,20 @@ class Application:
         # Logger
         log_formatter = logging.Formatter('%(asctime)s %(levelname)s %(funcName)s(%(lineno)d) %(message)s')
         logfile = os.path.join(os.environ["MYH_HOME"], 'logs', 'weather.log')
-        my_handler = RotatingFileHandler(logfile, mode='a', maxBytes=5 * 1024 * 1024,
+
+        file_handler = RotatingFileHandler(logfile, mode='a', maxBytes=5 * 1024 * 1024,
                                          backupCount=2, encoding=None, delay=0)
-        my_handler.setFormatter(log_formatter)
-        my_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(log_formatter)
+        file_handler.setLevel(logging.DEBUG)
+
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(log_formatter)
 
         self.app_log = logging.getLogger('root')
         self.app_log.setLevel(logging.DEBUG)
 
-        self.app_log.addHandler(my_handler)
+        self.app_log.addHandler(console_handler)
+        self.app_log.addHandler(file_handler)
 
     def get_remain_time_db(self):
         return self.__myh_db_dict["remain_time_db"]
