@@ -4,13 +4,13 @@ import argparse
 import glob
 import json
 import Adafruit_DHT
-import MySQLdb as Mdb
 import numpy
 import pyowm
 import logging
 from logging.handlers import RotatingFileHandler
-from datetime import datetime
 from abc import ABCMeta, abstractmethod
+
+from core.database import MyHomessistantDatabase
 
 os.system('/sbin//modprobe w1-gpio')
 os.system('/sbin//modprobe w1-therm')
@@ -97,10 +97,11 @@ class OutdoorAPITemperatureSensor(TemperatureSensorAbstract):
 class Application:
     def __init__(self):
         self.sensors_list = []
-        self.database = None
+        self.database = MyHomessistantDatabase()
+        self.database.connection()
         # Args Parse
         parser = argparse.ArgumentParser()
-        parser.add_argument("--insert", help="ignore verification of db_time",action="store_true")
+        parser.add_argument("--insert", help="ignore verification of db_time", action="store_true")
         self.args = parser.parse_args()
         # Dicts
         self.__myh_db_file = os.path.join(os.environ["MYH_HOME"], "data", "myh_db.json")
@@ -126,6 +127,9 @@ class Application:
 
         self.logger.addHandler(console_handler)
         self.logger.addHandler(file_handler)
+
+    def __del__(self):
+        self.database.close()
 
     def get_remain_time_db(self):
         return self.__myh_db_dict["remain_time_db"]
@@ -188,46 +192,7 @@ class Application:
         out_sensor = OutdoorAPITemperatureSensor()
         return out_sensor.get_humidity()
 
-    ##Database
-    def connect_database(self):
-        # Connexion
-        db_login, db_password, db_base, db_hostname = self.get_db_credentials()
-        try:
-            self.database = Mdb.connect('localhost', db_login, db_password, db_base)
-        except Mdb.Error, e:
-            self.logger.error(str(e))
-            exit(-1)
-
-    def insert_db(self, temperature_in, temperature_out, humidity_in, humidity_out):
-        try:
-            cursor = self.database.cursor()
-            # Date - In - Out - State
-            if temperature_out is None:
-                temperature_out = "NULL"
-            if temperature_in is None:
-                temperature_in = "NULL"
-            if humidity_in is None:
-                humidity_in = "NULL"
-            if humidity_out is None:
-                humidity_out = "NULL"
-            velux_state = "NULL"
-            query = "INSERT INTO Weather VALUES (TIMESTAMP(\'{0}\'),{1},{2},{3},{4},0,{5})".format(str(datetime.now()),
-                                                                                                   str(temperature_in),
-                                                                                                   str(
-                                                                                                       temperature_out),
-                                                                                                   str(humidity_in),
-                                                                                                   str(humidity_out),
-                                                                                                   str(velux_state))
-            self.logger.debug(query)
-            cursor.execute(query)
-            self.database.commit()
-        except Mdb.Error, e:
-            self.logger.error(str(e))
-            exit(-1)
-        finally:
-            if self.database:
-                self.database.close()
-
+    # Files for flask api
     def update_weather_data(self, temp_avg, temp_out, hum_avg, hum_out):
         self.__weather_dict["temp_avg"] = temp_avg
         self.__weather_dict["temp_out"] = temp_out
@@ -259,15 +224,13 @@ if __name__ == "__main__":
 
     if app.args.insert:
         app.logger.info("Forced Insertion into DB by using --insert")
-        app.connect_database()
-        app.insert_db(temp_avg, temp_out, hum_avg, hum_out)
+        app.database.insert_weather(temp_avg, temp_out, hum_avg, hum_out)
         # Do not change remain_time_db
         exit(0)
 
     if remain_time_db == 0:
         # Add to database
-        app.connect_database()
-        app.insert_db(temp_avg, temp_out, hum_avg, hum_out)
+        app.database.insert_weather(temp_avg, temp_out, hum_avg, hum_out)
         app.reset_remain_time_db()
     else:
         if remain_time_db < 0:

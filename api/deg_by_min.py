@@ -1,30 +1,17 @@
-import os
-import json
 from datetime import datetime
-
-import MySQLdb as Mdb
 import numpy
+
+from core.database import MyHomessistantDatabase
 
 db_struct = {"date": 0, "temp_in": 1, "heater_state": 5}
 db_min_heater_minutes = 40.0
 
+
 def compute_deg_by_min():
     # Database connection
-    myh_db_file = os.path.join(os.environ["MYH_HOME"], "data", "myh_db.json")
-    with open(myh_db_file, 'r') as myh_db_file_data:
-        myh_db_dict = json.load(myh_db_file_data)
-    db_login = myh_db_dict["db_user"]
-    db_password = myh_db_dict["db_password"]
-    db_base = myh_db_dict["db_base"]
-    db_hostname = myh_db_dict["db_hostname"]
-    try:
-        database = Mdb.connect(db_hostname, db_login, db_password, db_base)
-    except Mdb.Error, e:
-        print "-1"
-        exit(-1)
-
-    cursor = database.cursor()
-    cursor.execute("SELECT * FROM `Weather` ORDER BY `date` ASC")
+    database = MyHomessistantDatabase()
+    database.connection()
+    cursor = database.get_all_weather_cursor()
 
     in_on_zone = False
     start_on_zone = {"date": None, "temp_in": None}
@@ -33,7 +20,7 @@ def compute_deg_by_min():
     while (1):
         row = cursor.fetchone()
         # Manage end of list
-        if row == None:
+        if row is None:
             break
         # Manage detection of start
         if bool(row[db_struct["heater_state"]]) and not in_on_zone:
@@ -63,9 +50,11 @@ def compute_deg_by_min():
     if not coef_list == []:
         average_coef = numpy.average(coef_list)
         return average_coef
-    else :
+    else:
         print "No data with heater_state on found."
         exit(-1)
+    database.close()
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     print compute_deg_by_min()

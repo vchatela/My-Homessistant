@@ -27,3 +27,8 @@ rm mycron
 # bashrc or zshrc source myh_rc
 #echo -e "\nexport MYH_HOME='$MYH_HOME'\n" >> ~/.zshrc
 echo -e "\nexport MYH_HOME='$MYH_HOME'\n" >> ~/.bashrc
+
+# Compile libraries
+g++ libs/radio_relais/radioEmission.cpp -o bin/radioEmission -lwiringPi
+chmod 777 bin/radioEmission
+chmod +s bin/radioEmission

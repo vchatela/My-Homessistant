@@ -1,10 +1,10 @@
 #Create User
-#TODO : v?rifier requ?te !
+#TODO : verifier requete !
 CREATE USER 'home_user'@'localhost';GRANT USAGE ON *.* TO 'home_user'@'localhost' WITH MAX_QUERIES_PER_HOUR 0 MAX_CONNECTIONS_PER_HOUR 0 MAX_UPDATES_PER_HOUR 0 MAX_USER_CONNECTIONS 0;GRANT ALL PRIVILEGES ON `home_user\_%`.* TO 'home_user'@'localhost';
 #Create Database
 CREATE DATABASE Homesssistant;
 USE Homessistant;
-#Temperature Table
+#Weather Table
 CREATE TABLE Weather (
 date DATETIME PRIMARY KEY,
 temperature_in FLOAT NOT NULL,
@@ -14,4 +14,14 @@ humidity_out FLOAT,
 heater_state TINYINT(1) NOT NULL,
 is_velux_open TINYINT(1)
 )
+#Limit weather table
+
 #Programmation Table
+CREATE TABLE Programmation (
+temp_ref INT(11) NOT NULL PRIMARY KEY,
+plug_state TINYINT(1) NOT NULL PRIMARY KEY,
+start_time TIME NOT NULL PRIMARY KEY,
+day_of_week SET('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday') NOT NULL PRIMARY KEY,
+plug_type ENUM('HEATER','MOSQUITO') NOT NULL PRIMARY KEY,
+plug_number TINYINT(1) NOT NULL PRIMARY KEY
+)

@@ -1,0 +1,11 @@
+{
+  "2": {
+    "state": "ON",
+    "type": "HEATER",
+    "plug_id": 12325261,
+    "description": "Prise n 2 - Chauffage ou Anti Moustique",
+    "remain_time_update": 0,
+    "default_time_update": 10,
+    "temp_ref": 20
+  }
+}

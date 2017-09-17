@@ -1,4 +1,5 @@
 {
   "rest_state":"ON",
-  "weather_state":"ON"
+  "weather_state":"ON",
+  "radio_wiringpi" : 29
 }
