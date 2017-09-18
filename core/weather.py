@@ -1,6 +1,5 @@
 import time
 import os
-import argparse
 import glob
 import json
 import Adafruit_DHT
@@ -99,10 +98,6 @@ class Application:
         self.sensors_list = []
         self.database = MyHomessistantDatabase()
         self.database.connection()
-        # Args Parse
-        parser = argparse.ArgumentParser()
-        parser.add_argument("--insert", help="ignore verification of db_time", action="store_true")
-        self.args = parser.parse_args()
         # Dicts
         self.__myh_db_file = os.path.join(os.environ["MYH_HOME"], "data", "myh_db.json")
         with open(self.__myh_db_file, 'r') as myh_db_file_data:
@@ -122,7 +117,7 @@ class Application:
         console_handler = logging.StreamHandler()
         console_handler.setFormatter(log_formatter)
 
-        self.logger = logging.getLogger('root')
+        self.logger = logging.getLogger('weather')
         self.logger.setLevel(logging.DEBUG)
 
         self.logger.addHandler(console_handler)
@@ -188,6 +183,19 @@ class Application:
         with open(self.__weather_file, 'w') as f:
             json.dump(self.__weather_dict, f)
 
+    def get_heater_state(self):
+        self.__plugs_file = os.path.join(os.environ["MYH_HOME"], "data", "plugs.json")
+        with open(self.__plugs_file, 'r') as plugs_file_data:
+            self.__plugs_dict = json.load(plugs_file_data)
+        for plug_number in self.__plugs_dict:
+            plug_dict = self.__plugs_dict[plug_number]
+            # If here the plug matched for this rule
+            # HEATER case
+            if plug_dict["state"].lower() == "on":
+                return 1
+            else:
+                return 0
+
 
 # Main
 
@@ -205,5 +213,7 @@ if __name__ == "__main__":
     hum_avg = app.get_humidity()
     hum_out = app.get_out_humidity()
 
+    heater_state = app.get_heater_state()
+
     app.update_weather_data(temp_avg, temp_out, hum_avg, hum_out)
-    app.database.insert_weather(temp_avg, temp_out, hum_avg, hum_out)
+    app.database.insert_weather(temp_avg, temp_out, hum_avg, hum_out, heater_state)

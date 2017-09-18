@@ -38,7 +38,7 @@ class Manager():
         console_handler = logging.StreamHandler()
         console_handler.setFormatter(log_formatter)
 
-        self.logger = logging.getLogger('root')
+        self.logger = logging.getLogger('manager')
         self.logger.setLevel(logging.DEBUG)
 
         self.logger.addHandler(console_handler)

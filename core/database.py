@@ -22,7 +22,7 @@ class MyHomessistantDatabase():
         console_handler = logging.StreamHandler()
         console_handler.setFormatter(log_formatter)
 
-        self.logger = logging.getLogger('root')
+        self.logger = logging.getLogger('database')
         self.logger.setLevel(logging.DEBUG)
 
         self.logger.addHandler(console_handler)
@@ -38,11 +38,12 @@ class MyHomessistantDatabase():
         self.__db_hostname = myh_db_dict["db_hostname"]
         try:
             self.__database = Mdb.connect(self.__db_hostname, self.__db_login, self.__db_password, self.__db_base)
+            self.logger.debug("Database connection established")
         except Mdb.Error, e:
             self.logger.error(str(e))
             exit(-1)
 
-    def insert_weather(self, temperature_in, temperature_out, humidity_in, humidity_out):
+    def insert_weather(self, temperature_in, temperature_out, humidity_in, humidity_out,heater_state):
         try:
             cursor = self.__database.cursor()
             # Date - In - Out - State
@@ -55,13 +56,15 @@ class MyHomessistantDatabase():
             if humidity_out is None:
                 humidity_out = "NULL"
             velux_state = "NULL"
-            query = "INSERT INTO Weather VALUES (TIMESTAMP(\'{0}\'),{1},{2},{3},{4},0,{5})".format(str(datetime.now()),
+            query = "INSERT INTO Weather VALUES (TIMESTAMP(\'{0}\'),{1},{2},{3},{4},{5},{6})".format(str(datetime.now()),
                                                                                                    str(temperature_in),
                                                                                                    str(
                                                                                                        temperature_out),
                                                                                                    str(humidity_in),
                                                                                                    str(humidity_out),
+                                                                                                   str(heater_state),
                                                                                                    str(velux_state))
+            self.logger.debug("Query executed : "+query)
             cursor.execute(query)
             self.__database.commit()
         except Mdb.Error, e:
@@ -72,6 +75,7 @@ class MyHomessistantDatabase():
         try:
             cursor = self.__database.cursor()
             query = "SELECT * FROM Programmation"
+            self.logger.debug("Query executed : " + query)
             cursor.execute(query)
             return cursor
         except Mdb.Error, e:
@@ -81,7 +85,9 @@ class MyHomessistantDatabase():
     def get_all_weather_cursor(self):
         try:
             cursor = self.__database.cursor()
-            cursor.execute("SELECT * FROM `Weather` ORDER BY `date` ASC")
+            query = "SELECT * FROM `Weather` ORDER BY `date` ASC"
+            self.logger.debug("Query executed : " + query)
+            cursor.execute(query)
             return cursor
         except Mdb.Error, e:
             self.logger.error(str(e))
@@ -89,4 +95,5 @@ class MyHomessistantDatabase():
 
     def close(self):
         if self.__database:
+            self.logger.debug("Database closed")
             self.__database.close()
