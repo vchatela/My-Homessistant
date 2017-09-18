@@ -1,4 +1,5 @@
 from datetime import datetime
+
 import numpy
 
 from core.database import MyHomessistantDatabase

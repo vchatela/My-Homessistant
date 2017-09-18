@@ -1,10 +1,10 @@
-import os
-from datetime import datetime
-import MySQLdb as Mdb
 import json
 import logging
-
+import os
+from datetime import datetime
 from logging.handlers import RotatingFileHandler
+
+import MySQLdb as Mdb
 
 
 class MyHomessistantDatabase():
@@ -43,7 +43,7 @@ class MyHomessistantDatabase():
             self.logger.error(str(e))
             exit(-1)
 
-    def insert_weather(self, temperature_in, temperature_out, humidity_in, humidity_out,heater_state):
+    def insert_weather(self, temperature_in, temperature_out, humidity_in, humidity_out, heater_state):
         try:
             cursor = self.__database.cursor()
             # Date - In - Out - State
@@ -56,15 +56,16 @@ class MyHomessistantDatabase():
             if humidity_out is None:
                 humidity_out = "NULL"
             velux_state = "NULL"
-            query = "INSERT INTO Weather VALUES (TIMESTAMP(\'{0}\'),{1},{2},{3},{4},{5},{6})".format(str(datetime.now()),
-                                                                                                   str(temperature_in),
-                                                                                                   str(
-                                                                                                       temperature_out),
-                                                                                                   str(humidity_in),
-                                                                                                   str(humidity_out),
-                                                                                                   str(heater_state),
-                                                                                                   str(velux_state))
-            self.logger.debug("Query executed : "+query)
+            query = "INSERT INTO Weather VALUES (TIMESTAMP(\'{0}\'),{1},{2},{3},{4},{5},{6})".format(
+                str(datetime.now()),
+                str(temperature_in),
+                str(
+                    temperature_out),
+                str(humidity_in),
+                str(humidity_out),
+                str(heater_state),
+                str(velux_state))
+            self.logger.debug("Query executed : " + query)
             cursor.execute(query)
             self.__database.commit()
         except Mdb.Error, e:

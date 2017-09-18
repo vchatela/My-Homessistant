@@ -1,5 +1,6 @@
 {
-  "rest_state":"ON",
-  "weather_state":"ON",
-  "radio_wiringpi" : 29
+  "flask_state": "OFF",
+  "flask_pid": -1,
+  "app_state": "ON",
+  "radio_wiringpi": 29
 }

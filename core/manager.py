@@ -1,9 +1,7 @@
 import datetime
-import os
 import json
-
 import logging
-
+import os
 from logging.handlers import RotatingFileHandler
 
 from core.database import MyHomessistantDatabase
@@ -13,6 +11,14 @@ db_struct = {"temp_ref": 0, "plug_state": 1, "start_time": 2, "day_of_week": 3, 
 
 class Manager():
     def __init__(self):
+        # Check server allow to run
+        __myh_file = os.path.join(os.environ["MYH_HOME"], "data", "myh.json")
+        with open(__myh_file, 'r') as __myh_file_data:
+            __myh_dict = json.load(__myh_file_data)
+            if not __myh_dict["app_state"].lower() == "on":
+                exit(0)
+            self.__radio_wiringpi_number = str(__myh_dict["radio_wiringpi"])
+        # Do work
         self.database = MyHomessistantDatabase()
         self.database.connection()
         self.__plugs_file = os.path.join(os.environ["MYH_HOME"], "data", "plugs.json")
@@ -21,10 +27,6 @@ class Manager():
         self.__weather_file = os.path.join(os.environ["MYH_HOME"], "data", "weather.json")
         with open(self.__weather_file, 'r') as weather_file_data:
             self.__weather_dict = json.load(weather_file_data)
-        __myh_file = os.path.join(os.environ["MYH_HOME"], "data", "myh.json")
-        with open(__myh_file, 'r') as __myh_file_data:
-            __myh_dict = json.load(__myh_file_data)
-            self.__radio_wiringpi_number = str(__myh_dict["radio_wiringpi"])
 
         # Logger
         log_formatter = logging.Formatter('%(asctime)s %(levelname)s %(funcName)s(%(lineno)d) %(message)s')
@@ -45,7 +47,8 @@ class Manager():
         self.logger.addHandler(file_handler)
 
     def __del__(self):
-        self.database.close()
+        if hasattr(self, "database") and self.database:
+            self.database.close()
 
     def turn_on_off_plug(self, plug_number, new_state):
         plug_id = str(self.__plugs_dict[plug_number]["plug_id"])
@@ -124,6 +127,7 @@ class Manager():
                     self.turn_on_off_plug(plug_number, plug_dict["plug_state"])
             else:
                 self.turn_on_off_plug(plug_number, "off")
+
 
 if __name__ == "__main__":
     my_manager = Manager()

@@ -1,13 +1,14 @@
-import time
-import os
 import glob
 import json
+import logging
+import os
+import time
+from abc import ABCMeta, abstractmethod
+from logging.handlers import RotatingFileHandler
+
 import Adafruit_DHT
 import numpy
 import pyowm
-import logging
-from logging.handlers import RotatingFileHandler
-from abc import ABCMeta, abstractmethod
 
 from core.database import MyHomessistantDatabase
 
@@ -95,6 +96,13 @@ class OutdoorAPITemperatureSensor(TemperatureSensorAbstract):
 
 class Application:
     def __init__(self):
+        # Check server allow to run
+        __myh_file = os.path.join(os.environ["MYH_HOME"], "data", "myh.json")
+        with open(__myh_file, 'r') as __myh_file_data:
+            __myh_dict = json.load(__myh_file_data)
+            if not __myh_dict["app_state"].lower() == "on":
+                exit(0)
+        # Do work
         self.sensors_list = []
         self.database = MyHomessistantDatabase()
         self.database.connection()
@@ -124,7 +132,8 @@ class Application:
         self.logger.addHandler(file_handler)
 
     def __del__(self):
-        self.database.close()
+        if hasattr(self, "database") and self.database:
+            self.database.close()
 
     def get_db_credentials(self):
         return self.__myh_db_dict["db_user"], self.__myh_db_dict["db_password"], self.__myh_db_dict["db_base"], \

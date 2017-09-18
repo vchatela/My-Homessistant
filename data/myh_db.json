@@ -1,6 +1,6 @@
 {
-  "db_user" : "home_user",
-  "db_password" : "",
-  "db_base" : "Homessistant",
-  "db_hostname" : "localhost"
+  "db_user": "home_user",
+  "db_password": "",
+  "db_base": "Homessistant",
+  "db_hostname": "localhost"
 }
