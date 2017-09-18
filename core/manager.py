@@ -54,9 +54,9 @@ class Manager():
              "1", new_state])
         self.logger.debug("Command launched : " + command)
         os.system(command)
-        self.__plugs_dict[plug_number]["state"] = "ON"
+        self.__plugs_dict[plug_number]["state"] = new_state
         with open(self.__plugs_file, 'w') as f:
-            json.dump(self.__plugs_file, f)
+            json.dump(self.__plugs_dict, f)
         self.reset_last_update(plug_number)
 
     def decrease_last_update(self, plug_number):
@@ -65,18 +65,18 @@ class Manager():
         else:
             self.__plugs_dict[plug_number]["remain_time_update"] = 0
         with open(self.__plugs_file, 'w') as f:
-            json.dump(self.__plugs_file, f)
+            json.dump(self.__plugs_dict, f)
 
     def reset_last_update(self, plug_number):
         self.__plugs_dict[plug_number]["remain_time_update"] = self.__plugs_dict[plug_number]["default_time_update"]
         with open(self.__plugs_file, 'w') as f:
-            json.dump(self.__plugs_file, f)
+            json.dump(self.__plugs_dict, f)
 
     def update_plug(self, plug_number, temp, state):
         self.__plugs_dict[plug_number]["temp_ref"] = temp
         self.__plugs_dict[plug_number]["plug_state"] = state
         with open(self.__plugs_file, 'w') as f:
-            json.dump(self.__plugs_file, f)
+            json.dump(self.__plugs_dict, f)
 
     def check_rules(self):
         cursor_prog = self.database.get_cursor_programmation()
