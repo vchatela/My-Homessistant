@@ -109,19 +109,21 @@ class Manager():
             plug_dict = self.__plugs_dict[plug_number]
             # If here the plug matched for this rule
             # HEATER case
-            if plug_dict["type"] == "HEATER":
-                if self.__weather_dict["temp_avg"] < plug_dict["temp_ref"]:
-                    # Update after 10 minutes minimum before last change
-                    if plug_dict["remain_time_update"] == 0:
-                        # Turn on heater
-                        self.turn_on_off_plug(plug_number, "on")
-                else:
-                    self.turn_on_off_plug(plug_number, "off")
-                self.decrease_last_update(plug_number)
-            # MOSQUITO case
-            elif plug_dict["type"] == "MOSQUITO":
-                self.turn_on_off_plug(plug_number, plug_dict["plug_state"])
-
+            if plug_dict["state"].lower() == "on":
+                if plug_dict["type"] == "HEATER":
+                    if self.__weather_dict["temp_avg"] < plug_dict["temp_ref"]:
+                        # Update after 10 minutes minimum before last change
+                        if plug_dict["remain_time_update"] == 0:
+                            # Turn on heater
+                            self.turn_on_off_plug(plug_number, "on")
+                    else:
+                        self.turn_on_off_plug(plug_number, "off")
+                    self.decrease_last_update(plug_number)
+                # MOSQUITO case
+                elif plug_dict["type"] == "MOSQUITO":
+                    self.turn_on_off_plug(plug_number, plug_dict["plug_state"])
+            else:
+                self.turn_on_off_plug(plug_number, "off")
 
 if __name__ == "__main__":
     my_manager = Manager()
