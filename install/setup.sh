@@ -5,8 +5,8 @@ if [ "$#" -ne 1 ]; then
     echo "sudo bash setup.py --home /path/to/home/folder/app"
 fi
 
-MYH_HOME="$1"
-
+export MYH_HOME="$1"
+echo "export MYH_HOME=$MYH_HOME" >> ~/.bashrc
 # Install package
 ./install_package.sh
 

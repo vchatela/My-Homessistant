@@ -7,7 +7,5 @@ pip install rson
 # Install imported Libraries
 ## Adafruit Python DHT
 apt-get install build-essential python-dev
-cd $MYH_HOME/libs
-git clone https://github.com/adafruit/Adafruit_Python_DHT.git
 cd Adafruit_Python_DHT
 python setup.py install

@@ -1,3 +1,6 @@
 [submodule "libs/radio_relais"]
 	path = libs/radio_relais
 	url = https://github.com/vchatela/Chacon_RadioRelais.git
+[submodule "libs/Adafruit_Python_DHT"]
+	path = libs/Adafruit_Python_DHT
+	url = https://github.com/adafruit/Adafruit_Python_DHT.git
