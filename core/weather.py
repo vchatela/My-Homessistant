@@ -131,19 +131,6 @@ class Application:
     def __del__(self):
         self.database.close()
 
-    def get_remain_time_db(self):
-        return self.__myh_db_dict["remain_time_db"]
-
-    def decrease_remain_time_db(self):
-        self.__myh_db_dict["remain_time_db"] -= 1
-        with open(self.__myh_db_file, 'w') as f:
-            json.dump(self.__myh_db_dict, f)
-
-    def reset_remain_time_db(self):
-        self.__myh_db_dict["remain_time_db"] = self.__myh_db_dict["default_remain_time_db"]
-        with open(self.__myh_db_file, 'w') as f:
-            json.dump(self.__myh_db_dict, f)
-
     def get_db_credentials(self):
         return self.__myh_db_dict["db_user"], self.__myh_db_dict["db_password"], self.__myh_db_dict["db_base"], \
                self.__myh_db_dict["db_hostname"]
@@ -179,7 +166,7 @@ class Application:
             if "get_humidity" in dir(sensor):
                 hum_tmp = sensor.get_humidity()
                 hum_list.append(hum_tmp)
-                self.logger.debug("Humidity is " + str(hum_tmp))
+                self.logger.debug("Inside humidity is " + str(hum_tmp))
         average_hum = numpy.average(hum_list)
         self.logger.debug("Average humidity is " + str(average_hum) + " %")
         return average_hum
@@ -207,8 +194,6 @@ class Application:
 if __name__ == "__main__":
     app = Application()
 
-    remain_time_db = int(app.get_remain_time_db())
-
     # Insert into database
     # Determine Average Temperature from all sensors
     # Load sensors
@@ -221,22 +206,4 @@ if __name__ == "__main__":
     hum_out = app.get_out_humidity()
 
     app.update_weather_data(temp_avg, temp_out, hum_avg, hum_out)
-
-    if app.args.insert:
-        app.logger.info("Forced Insertion into DB by using --insert")
-        app.database.insert_weather(temp_avg, temp_out, hum_avg, hum_out)
-        # Do not change remain_time_db
-        exit(0)
-
-    if remain_time_db == 0:
-        # Add to database
-        app.database.insert_weather(temp_avg, temp_out, hum_avg, hum_out)
-        app.reset_remain_time_db()
-    else:
-        if remain_time_db < 0:
-            app.reset_remain_time_db()
-        else:
-            app.decrease_remain_time_db()
-
-    next_remain_time_db = app.get_remain_time_db()
-    app.logger.debug("Next remaining time to db : " + str(next_remain_time_db))
+    app.database.insert_weather(temp_avg, temp_out, hum_avg, hum_out)

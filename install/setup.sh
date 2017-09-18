@@ -19,7 +19,8 @@ echo "export MYH_HOME=$MYH_HOME" >> ~/.bashrc
 #write out current crontab
 crontab -l > mycron
 #echo new cron into cron file
-echo "* * * * * export MYH_HOME=$MYH_HOME ; /usr/bin/python $MYH_HOME/core/weather.py --info " >> mycron
+echo "*/10 * * * * export MYH_HOME=$MYH_HOME ; /usr/bin/python $MYH_HOME/core/weather.py " >> mycron
+echo "* * * * * export MYH_HOME=$MYH_HOME ; /usr/bin/python $MYH_HOME/core/manager.py" >> mycron
 #install new cron file
 crontab mycron
 rm mycron

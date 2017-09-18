@@ -42,7 +42,7 @@ class MyHomessistantDatabase():
             self.logger.error(str(e))
             exit(-1)
 
-    def insert_weather(self, temperature_out, temperature_in, humidity_in, humidity_out):
+    def insert_weather(self, temperature_in, temperature_out, humidity_in, humidity_out):
         try:
             cursor = self.__database.cursor()
             # Date - In - Out - State

@@ -2,8 +2,5 @@
   "db_user" : "home_user",
   "db_password" : "",
   "db_base" : "Homessistant",
-  "db_hostname" : "localhost",
-  "ref_temp": 20.0,
-  "remain_time_db": 9,
-  "default_remain_time_db": 9
+  "db_hostname" : "localhost"
 }
