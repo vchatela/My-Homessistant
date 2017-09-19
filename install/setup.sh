@@ -19,8 +19,9 @@ echo "export MYH_HOME=$MYH_HOME" >> $bashrc
 echo "export MYH_HOME=$MYH_HOME" >> $zshrc
 
 # Install package
+echo "\e[32mInstall Package\e[0m"
 $MYH_HOME/install/install_package.sh
-
+echo "\e[32mMysql\e[0m"
 # Create databases and users
 $MYH_HOME/install/mysql/mysql.sh
 

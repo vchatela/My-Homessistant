@@ -1,6 +1,8 @@
 #!/bin/bash
 # For PHP MY ADMIN
-apt-get install mysql-server php5 php5-mysql phpmyadmin -y
+apt-get install mysql-server phpmyadmin -y
+# For mysql client
+apt-get install mysql-client -y
 # For pip
 apt-get install python-pip
 pip install --upgrade pip
