@@ -2,12 +2,15 @@
 
 # Argument Parameters
 if [ "$#" -ne 2 ]; then
-    echo "sudo bash setup.sh /path/to/home/folder/app user"
+    echo "sudo -H bash install/setup.sh /path/to/home/folder/app user [mysql_passwd]"
     exit -1
 fi
 
 export MYH_HOME="$1"
 export MYH_USER="$2"
+if [ "$#" -eq 3 ]; then
+    export MYSQL_PASSWD="$2"
+fi
 
 # Execute rights for sh scripts
 chmod +x $MYH_HOME/install/*.sh $MYH_HOME/install/mysql/*.sh
@@ -17,12 +20,12 @@ zshrc=/home/$MYH_USER/.zshrc
 bashrc=/home/$MYH_USER/.bashrc
 
 LINE='export MYH_HOME=$MYH_HOME'
-grep -qF "$LINE" "$FILE" || echo "$LINE" >> "$bashrc"
-grep -qF "$LINE" "$FILE" || echo "$LINE" >> "$zshrc"
+grep -qF "$LINE" "$bashrc" || echo "$LINE" >> "$bashrc"
+grep -qF "$LINE" "$zshrc" || echo "$LINE" >> "$zshrc"
 
 LINE="export PYTHONPATH=\$PYTHONPATH:$MYH_HOME"
-grep -qF "$LINE" "$FILE" || echo "$LINE" >> "$zshrc"
-grep -qF "$LINE" "$FILE" || echo "$LINE" >> "$bashrc"
+grep -qF "$LINE" "$bashrc" || echo "$LINE" >> "$bashrc"
+grep -qF "$LINE" "$zshrc" || echo "$LINE" >> "$zshrc"
 
 # Install package
 echo -e "\e[32mInstall Package\e[0m"

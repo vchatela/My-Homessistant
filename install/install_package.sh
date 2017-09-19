@@ -1,6 +1,12 @@
 #!/bin/bash
+apt-get install debconf -y
 # For PHP MY ADMIN
-apt-get install mysql-server phpmyadmin -y
+echo -e "\e[32mEnter again '$MYSQL_PASSWD' for mysql root password\e[0m"
+echo "mysql-server-5.7 mysql-server/root_password password $MYSQL_PASSWD" | debconf-set-selections
+echo "mysql-server-5.7 mysql-server/root_password_again password $MYSQL_PASSWD" | debconf-set-selections
+apt-get install mysql-server-5.7 -y
+echo -e "\e[32mYou can set the phpmyadmin password you want\e[0m"
+apt-get install phpmyadmin -y
 # For mysql client
 apt-get install mysql-client -y
 # For pip
