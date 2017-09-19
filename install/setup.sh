@@ -21,11 +21,17 @@ echo "export MYH_HOME=$MYH_HOME" >> $zshrc
 # Install package
 echo -e "\e[32mInstall Package\e[0m"
 $MYH_HOME/install/install_package.sh
+
 echo -e "\e[32mMysql\e[0m"
+# Configure PHP MY ADMIN
+LINE='Include /etc/phpmyadmin/apache.conf'
+FILE='/etc/apache2/apache2.conf'
+grep -qF "$LINE" "$FILE" || echo "$LINE" >> "$FILE"
+# Restart apache2
+/etc/init.d/apache2 restart
+
 # Create databases and users
 $MYH_HOME/install/mysql/mysql.sh
-
-# Load environment
 
 # Add to crontab * * * * * python manager.py
 #write out current crontab
