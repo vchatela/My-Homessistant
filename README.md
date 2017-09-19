@@ -1,11 +1,16 @@
 # My-Homessitant
 
+## Warning Security
+This application is designed to be used inside a **private** network. Do not expose the raspberry-pi outside of your network, it would be at your risk.
+
+My personal recommendation is to expose a secure hardware (the raspberry isn't the best secured) as a NAS and connect yourself to it by using VPN.
+
 ## Architecture
 - api : usefull myh_tools
 	- **rest.py** : flask implementation
 	- **deg_by_min.py** : compute degrees won by minutes under heater
 - bin : contain compiled binaries from libs
-- core: main functionnalities
+- core: main functionalities
 	- **database.py** : allow connections to mysql database easily
 	- **hall.py** : get hall sensor value
 	- **weather.py** : get values from sensors and request to insert into database
