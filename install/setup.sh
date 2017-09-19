@@ -15,9 +15,14 @@ chmod +x $MYH_HOME/install/*.sh $MYH_HOME/install/mysql/*.sh
 # Prepare shell
 zshrc=/home/$MYH_USER/.zshrc
 bashrc=/home/$MYH_USER/.bashrc
+
 LINE='export MYH_HOME=$MYH_HOME'
 grep -qF "$LINE" "$FILE" || echo "$LINE" >> "$bashrc"
 grep -qF "$LINE" "$FILE" || echo "$LINE" >> "$zshrc"
+
+LINE="export PYTHONPATH=\$PYTHONPATH:$MYH_HOME"
+grep -qF "$LINE" "$FILE" || echo "$LINE" >> "$zshrc"
+grep -qF "$LINE" "$FILE" || echo "$LINE" >> "$bashrc"
 
 # Install package
 echo -e "\e[32mInstall Package\e[0m"
@@ -45,12 +50,3 @@ grep -qF "$LINE" "$FILE" || echo "$LINE" >> mycron
 #install new cron file
 crontab mycron
 rm mycron
-
-# bashrc or zshrc source myh_rc
-LINE="export MYH_HOME='$MYH_HOME'"
-grep -qF "$LINE" "$FILE" || echo "$LINE" >> "$zshrc"
-grep -qF "$LINE" "$FILE" || echo "$LINE" >> "$bashrc"
-
-LINE="export PYTHONPATH=\$PYTHONPATH:$MYH_HOME"
-grep -qF "$LINE" "$FILE" || echo "$LINE" >> "$zshrc"
-grep -qF "$LINE" "$FILE" || echo "$LINE" >> "$bashrc"
