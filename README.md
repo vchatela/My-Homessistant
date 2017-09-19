@@ -1,4 +1,4 @@
-# My-Homessitant
+# My-Homessitant [![Build Status](https://travis-ci.org/vchatela/My-Homessistant.svg?branch=master)](https://travis-ci.org/vchatela/My-Homessistant)
 
 ## Warning Security
 This application is designed to be used inside a **private** network. Do not expose the raspberry-pi outside of your network, it would be at your risk.
@@ -36,7 +36,7 @@ My personal recommendation is to expose a secure hardware (the raspberry isn't t
 git clone --recursive My-Homessistant.git
 cd My-Homesisstant
 chmod +x install/setup.sh
-sudo -H bash install/setup.sh /abs/path/to/My-Homessitant user_to_run
+sudo bash install/setup.sh /abs/path/to/My-Homessitant user_to_run
 ```
 
 ## Tech
