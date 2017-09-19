@@ -4,3 +4,6 @@
 [submodule "libs/Adafruit_Python_DHT"]
 	path = libs/Adafruit_Python_DHT
 	url = https://github.com/adafruit/Adafruit_Python_DHT.git
+[submodule "libs/wiringPi"]
+	path = libs/wiringPi
+	url = git://git.drogon.net/wiringPi

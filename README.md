@@ -20,5 +20,11 @@
 	- env
 		- myh_env.sh : set environment
 		
-## Environment
-myh_home = 
+## Installation
+```
+git clone --recursive My-Homessistant.git
+cd My-Homesisstant
+chmod +x install/*.sh
+sudo bash install/setup.sh /abs/path/to/My-Homessitant user_to_run
+
+```

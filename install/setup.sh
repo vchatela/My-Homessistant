@@ -2,16 +2,18 @@
 
 # Argument Parameters
 if [ "$#" -ne 2 ]; then
-    echo "sudo bash setup.py /path/to/home/folder/app user"
+    echo "sudo bash setup.sh /path/to/home/folder/app user"
+    exit -1
 fi
 
 export MYH_HOME="$1"
 echo "export MYH_HOME=$MYH_HOME" >> ~/.bashrc
+echo "export MYH_HOME=$MYH_HOME" >> ~/.zshrc
 # Install package
-./install_package.sh
+$MYH_HOME/install/install_package.sh
 
 # Create databases and users
-./mysql/mysql.sh
+$MYH_HOME/install/mysql/mysql.sh
 
 # Load environment
 
@@ -34,6 +36,6 @@ echo -e "export MYH_HOME='$MYH_HOME'\n" >> $bashrc
 echo -e "export PYTHONPATH=\$PYTHONPATH:$MYH_HOME\n" >> $bashrc
 
 # Compile libraries
-g++ libs/radio_relais/radioEmission.cpp -o bin/radioEmission -lwiringPi
+g++ $MYH_HOME/libs/radio_relais/radioEmission.cpp -o bin/radioEmission -lwiringPi
 chmod 777 bin/radioEmission
 chmod +s bin/radioEmission
