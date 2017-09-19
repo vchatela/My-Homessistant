@@ -7,8 +7,17 @@ if [ "$#" -ne 2 ]; then
 fi
 
 export MYH_HOME="$1"
-echo "export MYH_HOME=$MYH_HOME" >> ~/.bashrc
-echo "export MYH_HOME=$MYH_HOME" >> ~/.zshrc
+export MYH_USER="$2"
+
+# Execute rights for sh scripts
+chmod +x $MYH_HOME/install/*.sh $MYH_HOME/install/mysql/*.sh
+
+# Prepare shell
+zshrc=/home/$MYH_USER/.zshrc
+bashrc=/home/$MYH_USER/.bashrc
+echo "export MYH_HOME=$MYH_HOME" >> $bashrc
+echo "export MYH_HOME=$MYH_HOME" >> $zshrc
+
 # Install package
 $MYH_HOME/install/install_package.sh
 
@@ -28,14 +37,7 @@ crontab mycron
 rm mycron
 
 # bashrc or zshrc source myh_rc
-zshrc=/home/"$2"/.zshrc
-bashrc=/home/"$2"/.bashrc
 echo -e "export MYH_HOME='$MYH_HOME'\n" >> $zshrc
 echo -e "export PYTHONPATH=\$PYTHONPATH:$MYH_HOME\n" >> $zshrc
 echo -e "export MYH_HOME='$MYH_HOME'\n" >> $bashrc
 echo -e "export PYTHONPATH=\$PYTHONPATH:$MYH_HOME\n" >> $bashrc
-
-# Compile libraries
-g++ $MYH_HOME/libs/radio_relais/radioEmission.cpp -o bin/radioEmission -lwiringPi
-chmod 777 bin/radioEmission
-chmod +s bin/radioEmission

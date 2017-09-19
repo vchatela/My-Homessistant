@@ -24,7 +24,7 @@
 ```
 git clone --recursive My-Homessistant.git
 cd My-Homesisstant
-chmod +x install/*.sh
+chmod +x install/setup.sh
 sudo bash install/setup.sh /abs/path/to/My-Homessitant user_to_run
 
 ```
