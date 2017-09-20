@@ -95,18 +95,21 @@ class MyHomessistantDatabase():
             exit(-1)
 
     def get_charts_dataset(self, days):
+        dateformat = '%H:%M:%S,%d/%m/%Y'
         try:
             cursor = self.__database.cursor()
             limit_date = (datetime.now() - timedelta(days=days)).replace(microsecond=0)
             # Row_T
-            query = "SELECT date, temperature_in, temperature_out,heater_state FROM `Weather` WHERE date > '" + str(
+            query = "SELECT date, temperature_in, heater_state, temperature_out FROM `Weather` WHERE date > '" + str(
                 limit_date) + "'"
             self.logger.debug("Query executed : " + query)
             cursor.execute(query)
             res = cursor.fetchall()
             row_T = map(list, res)
             for x in row_T:
-                x[0] = x[0].strftime('%Y-%m-%d %H:%M:%S')
+                # x[0] = x[0].strftime(dateformat)
+                x[0] = [str(x[0].year), str(x[0].month), str(x[0].day), str(x[0].hour), str(x[0].minute),
+                        str(x[0].second)]
             # Row_H
             query = "SELECT date, humidity_in, humidity_out,heater_state FROM `Weather` WHERE date > '" + str(
                 limit_date) + "'"
@@ -115,7 +118,9 @@ class MyHomessistantDatabase():
             res = cursor.fetchall()
             row_H = map(list, res)
             for x in row_H:
-                x[0] = x[0].strftime('%Y-%m-%d %H:%M:%S')
+                # x[0] = x[0].strftime(dateformat)
+                x[0] = [str(x[0].year), str(x[0].month), str(x[0].day), str(x[0].hour), str(x[0].minute),
+                        str(x[0].second)]
             # Min Max Avg
             query = "SELECT MIN(temperature_in), MAX(temperature_in), AVG(temperature_in) FROM `Weather` WHERE date > '" + str(
                 limit_date) + "'"
