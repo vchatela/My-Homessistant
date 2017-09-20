@@ -1,0 +1,56 @@
+{% block head %}
+<style>
+    #chart_div {
+        width:  80%;
+        height: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<div id="chart_div"></div>
+<script>
+
+    google.charts.load('current', {packages: ['corechart', 'line']});
+    google.charts.setOnLoadCallback(drawChart);
+
+    function drawChart() {
+        row_T = {{ data_dict["row_T"] | safe }}
+
+        var data = new google.visualization.DataTable();
+        data.addColumn('datetime', 'Date');
+        data.addColumn('number', 'T° In');
+        data.addColumn({type: 'boolean', role: 'scope'});
+        data.addColumn('number', 'T° Out');
+        for (var i = 0; i < row_T.length; i++) {
+            elem = row_T[i];
+            elem[0] = new Date(elem[0][0], elem[0][1], elem[0][2], elem[0][3], elem[0][4], elem[0][5]);
+            elem[2] = Boolean(elem[2]);
+            data.addRow(elem);
+        }
+
+        var options = {
+            title: 'Temperature dans la chambre',
+            hAxis: {
+                title: 'Date'
+            },
+            vAxis: {
+                title: 'Temperature (°C)'
+            },
+            series: {
+                1: {curveType: 'function'}
+            },
+            color: ['green','blue']
+
+        };
+        var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
+        chart.draw(data, options);
+
+        window.addEventListener('resize', function() {
+            chart.draw(data, options);
+        }, false);
+    }
+
+</script>
+{% endblock %}

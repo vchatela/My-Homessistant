@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
 
 import MySQLdb as Mdb
@@ -90,6 +90,54 @@ class MyHomessistantDatabase():
             self.logger.debug("Query executed : " + query)
             cursor.execute(query)
             return cursor
+        except Mdb.Error, e:
+            self.logger.error(str(e))
+            exit(-1)
+
+    def get_charts_dataset(self, days):
+        dateformat = '%H:%M:%S,%d/%m/%Y'
+        try:
+            cursor = self.__database.cursor()
+            limit_date = (datetime.now() - timedelta(days=days)).replace(microsecond=0)
+            # Row_T
+            query = "SELECT date, temperature_in, heater_state, temperature_out FROM `Weather` WHERE date > '" + str(
+                limit_date) + "'"
+            self.logger.debug("Query executed : " + query)
+            cursor.execute(query)
+            res = cursor.fetchall()
+            row_T = map(list, res)
+            for x in row_T:
+                # x[0] = x[0].strftime(dateformat)
+                x[0] = [str(x[0].year), str(x[0].month), str(x[0].day), str(x[0].hour), str(x[0].minute),
+                        str(x[0].second)]
+            # Row_H
+            query = "SELECT date, humidity_in, humidity_out,heater_state FROM `Weather` WHERE date > '" + str(
+                limit_date) + "'"
+            self.logger.debug("Query executed : " + query)
+            cursor.execute(query)
+            res = cursor.fetchall()
+            row_H = map(list, res)
+            for x in row_H:
+                # x[0] = x[0].strftime(dateformat)
+                x[0] = [str(x[0].year), str(x[0].month), str(x[0].day), str(x[0].hour), str(x[0].minute),
+                        str(x[0].second)]
+            # Min Max Avg
+            query = "SELECT MIN(temperature_in), MAX(temperature_in), AVG(temperature_in) FROM `Weather` WHERE date > '" + str(
+                limit_date) + "'"
+            self.logger.debug("Query executed : " + query)
+            cursor.execute(query)
+            res = map(list, cursor.fetchall())
+            t_avg = res[0][2]
+            t_min = res[0][0]
+            t_max = res[0][1]
+            final_dict = {
+                "t_avg": "{0:.2f}".format(t_avg),
+                "t_min": "{0:.2f}".format(t_min),
+                "t_max": "{0:.2f}".format(t_max),
+                "row_T": row_T,
+                "row_H": row_H
+            }
+            return final_dict
         except Mdb.Error, e:
             self.logger.error(str(e))
             exit(-1)
