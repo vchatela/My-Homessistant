@@ -5,10 +5,10 @@ try:
     GPIO.setmode(GPIO.BOARD)
     GPIO.setup(PIN, GPIO.IN)
     if GPIO.input(PIN):
-        # No Magnet
+        # Magnet
         print "HIGH"
     else:
-        # Magnet
+        # No Magnet
         print "LOW"
 except KeyboardInterrupt:
     GPIO.cleanup()

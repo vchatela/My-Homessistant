@@ -1,0 +1,264 @@
+<!doctype html>
+
+<head>
+    <title>My-Homessistant Dashboard</title>
+
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+            crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet" type="text/css"/>
+</head>
+<body>
+<div id="wrapper" class="active" style="height:100vh;">
+    <nav class="navbar navbar-default navbar-static-top" role="navigation" style="margin-bottom: 0">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="index.html">My Homessistant Dashboard</a>
+        </div>
+
+
+        <div class="navbar-default sidebar" role="navigation">
+            <div class="sidebar-nav">
+                <ul class="nav" id="side-menu">
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div id="page-wrapper" style="height:100vh;">
+        <div class="row">
+            <div class="col-lg-1">
+                <h1 class="page-header">Dashboard</h1>
+            </div>
+        </div>
+        <div>
+            <div class="col-lg-8">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <i class="fa fa-bar-chart-o fa-fw"></i> Graphique de Température
+                        <div class="pull-right">
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-default btn-xs dropdown-toggle"
+                                        data-toggle="dropdown">
+                                    Durée
+                                    <span class="caret"></span>
+                                </button>
+                                <ul class="dropdown-menu pull-right" role="menu">
+                                    <li><a href="#">24H</a>
+                                    </li>
+                                    <li><a href="#">7 Jours</a>
+                                    </li>
+                                    <li><a href="#">1 Mois</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- /.panel-heading -->
+                    <div class="panel-body">
+                        <div id="chart_T_div"></div>
+                    </div>
+                    <!-- /.panel-body -->
+                </div>
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <i class="fa fa-clock-o fa-fw"></i> Graphique d'Humidité
+                        <div class="pull-right">
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-default btn-xs dropdown-toggle"
+                                        data-toggle="dropdown">
+                                    Durée
+                                    <span class="caret"></span>
+                                </button>
+                                <ul class="dropdown-menu pull-right" role="menu">
+                                    <li><a href="#">24H</a>
+                                    </li>
+                                    <li><a href="#">7 Jours</a>
+                                    </li>
+                                    <li><a href="#">1 Mois</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- /.panel-heading -->
+                    <div class="panel-body">
+                        <div id="chart_H_div"></div>
+                    </div>
+                    <!-- /.panel-body -->
+                </div>
+                <!-- /.panel -->
+            </div>
+            <!-- /.col-lg-8 -->
+            <div class="col-lg-4">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <i class="fa fa-bell fa-fw"></i> Tableau Récapitulatif
+                    </div>
+                    <!-- /.panel-heading -->
+                    <div class="panel-body">
+                        <table width="100%" class="table table-striped table-bordered table-hover"
+                               id="dataTables-example">
+                            <thead>
+                            <tr>
+                                <th>Temperature Actuelle</th>
+                                <th>Temperature Moyenne</th>
+                                <th>Temperature Minimale</th>
+                                <th>Temperature Maximale</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td class="text-center" id="act"></td>
+                                <td class="text-center" id="avg"></td>
+                                <td class="text-center" id="min"></td>
+                                <td class="text-center" id="max"></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <i class="fa fa-bell fa-fw"></i> Notifications Panel
+                    </div>
+                    <!-- /.panel-heading -->
+                    <div class="panel-body">
+                        <div class="list-group">
+                            <a href="#" class="list-group-item">
+                                <i class="fa fa-comment fa-fw"></i> New Comment
+                                <span class="pull-right text-muted small"><em>4 minutes ago</em>
+                            </span>
+                            </a>
+                        </div>
+                        <!-- /.list-group -->
+                        <a href="#" class="btn btn-default btn-block">View All Alerts</a>
+                    </div>
+                    <!-- /.panel-body -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+
+    act = {{ data_dict["t_act"] | safe }}
+    document.getElementById("act").innerHTML = act;
+    avg = {{ data_dict["t_avg"] | safe }}
+    document.getElementById("avg").innerHTML = avg;
+    min = {{ data_dict["t_min"] | safe }}
+    document.getElementById("min").innerHTML = min;
+    max = {{ data_dict["t_max"] | safe }}
+    document.getElementById("max").innerHTML = max;
+
+
+    google.charts.load('current', {packages: ['corechart', 'line'], 'language': 'fr'});
+    google.charts.setOnLoadCallback(drawChart_T);
+    google.charts.setOnLoadCallback(drawChart_H);
+
+    function drawChart_T() {
+        row_T = {{ data_dict["row_T"] | safe }}
+
+        var data_T = new google.visualization.DataTable();
+        var dateFormatter = new google.visualization.DateFormat({pattern: 'dd MMM yyyy HH:mm'});
+        data_T.addColumn('datetime', 'Date');
+        data_T.addColumn('number', 'T° In');
+        data_T.addColumn({type: 'boolean', role: 'scope'});
+        data_T.addColumn('number', 'T° Out');
+        for (var i = 0; i < row_T.length; i++) {
+            elem = row_T[i];
+            elem[0] = new Date(elem[0][0], elem[0][1], elem[0][2], elem[0][3], elem[0][4], elem[0][5]);
+            elem[2] = Boolean(elem[2]);
+            data_T.addRow(elem);
+        }
+
+        var options_T = {
+            title: 'Temperature dans la chambre',
+            chartArea: {
+                width: '80%'
+            },
+            hAxis: {
+                title: 'Date',
+                format: 'dd MMM yyyy'
+            },
+            vAxis: {
+                title: 'Temperature (°C)',
+                format: '# °C'
+            },
+            series: {
+                1: {curveType: 'function'}
+            },
+            width: '100%'
+        };
+        var chart_T = new google.visualization.LineChart(document.getElementById('chart_T_div'));
+        dateFormatter.format(data_T, 0);
+        chart_T.draw(data_T, options_T);
+
+        window.addEventListener('resize', function () {
+            chart_T.draw(data_T, options_T);
+        }, false);
+    }
+
+    function drawChart_H() {
+        row_H = {{ data_dict["row_H"] | safe }}
+
+        var data_H = new google.visualization.DataTable();
+        var dateFormatter = new google.visualization.DateFormat({pattern: 'dd MMM yyyy HH:mm'});
+        data_H.addColumn('datetime', 'Date');
+        data_H.addColumn('number', 'H° In');
+        data_H.addColumn({type: 'boolean', role: 'scope'});
+        data_H.addColumn('number', 'H° Out');
+        for (var j = 0; j < row_H.length; j++) {
+            elem = row_H[j];
+            elem[0] = new Date(elem[0][0], elem[0][1], elem[0][2], elem[0][3], elem[0][4], elem[0][5]);
+            elem[2] = Boolean(elem[2]);
+            data_H.addRow(elem);
+        }
+
+        var options_H = {
+            title: 'Humidité dans la chambre',
+            chartArea: {
+                width: '80%'
+            },
+            hAxis: {
+                title: 'Date',
+                format: 'dd MMM yyyy'
+            },
+            vAxis: {
+                title: 'Humidité (%)',
+                viewWindow: {
+                    max: 0,
+                    min: 100
+                },
+                format: '#\'%\''
+            },
+            series: {
+                1: {curveType: 'function'}
+            },
+            width: '100%'
+        };
+        var chart_H = new google.visualization.LineChart(document.getElementById('chart_H_div'));
+        dateFormatter.format(data_H, 0);
+        chart_H.draw(data_H, options_H);
+
+        window.addEventListener('resize', function () {
+            chart_H.draw(data_H, options_H);
+        }, false);
+    }
+
+</script>
+</body>

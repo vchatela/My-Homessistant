@@ -46,6 +46,8 @@ python myh.py -s start -l all
 ```
 ### Accès Flask
 [http://rpi_hostname:5005/](http://rpi_hostname:5005/)
+#### Dashboard
+![Charts](https://img11.hostingpics.net/pics/146993charts.png)
 
 ## Tech
 ### Git

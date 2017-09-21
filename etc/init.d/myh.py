@@ -58,7 +58,7 @@ def mylogger(debug):
 
 if __name__ == "__main__":
     help = False
-    debug = True
+    debug = False
     sig = "status"
     service_list = "all"
 
