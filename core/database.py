@@ -111,7 +111,7 @@ class MyHomessistantDatabase():
                 x[0] = [str(x[0].year), str(x[0].month), str(x[0].day), str(x[0].hour), str(x[0].minute),
                         str(x[0].second)]
             # Row_H
-            query = "SELECT date, humidity_in, humidity_out,heater_state FROM `Weather` WHERE date > '" + str(
+            query = "SELECT date, humidity_in, heater_state, humidity_out FROM `Weather` WHERE date > '" + str(
                 limit_date) + "'"
             self.logger.debug("Query executed : " + query)
             cursor.execute(query)

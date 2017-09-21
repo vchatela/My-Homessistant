@@ -42,7 +42,7 @@ def charts_dev():
     myh_db.close()
     return render_template("charts_dev.html",**locals())
 
-@app.route("/charts")
+@app.route("/dashboard")
 def charts():
     if not 'day' in request.args:
         day = 7
@@ -59,7 +59,7 @@ def charts():
 
     # Json data_sed ready to be sent to
     myh_db.close()
-    return render_template("charts.html",**locals())
+    return render_template("dashboard.html",**locals())
 
 if __name__ == '__main__':
     app.logger.setLevel(logging.INFO)  # use the native logger of flask
