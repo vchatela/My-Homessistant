@@ -1,6 +1,6 @@
+#!/usr/bin/env python
 # Script that allow to turn on/off the My_Homessistant app by stopping flask
 # and set state in myh.json used in the manager
-import errno
 import getopt
 import json
 import logging
@@ -22,15 +22,19 @@ def helper():
             List of services to send signal to
         --signal|-s
             Send the corresponding signal to MyHomessistant services
-            
+        --debug|-d
+            Print logs also into console
+
         :Examples:
+        myh.py -h
         myh.py -s status -l flask,app
         myh.py -s stop -l flask
         myh.py -s start -l all
     """
+    print msg
 
 
-def mylogger():
+def mylogger(debug):
     # Logger
     log_formatter = logging.Formatter('%(asctime)s %(levelname)s %(funcName)s(%(lineno)d) %(message)s')
     logfile = os.path.join(os.environ["MYH_HOME"], 'logs', 'manager.log')
@@ -40,23 +44,24 @@ def mylogger():
     file_handler.setFormatter(log_formatter)
     file_handler.setLevel(logging.DEBUG)
 
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(log_formatter)
-
     mylogger = logging.getLogger('myh')
     mylogger.setLevel(logging.DEBUG)
 
-    mylogger.addHandler(console_handler)
+    if debug:
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(log_formatter)
+        mylogger.addHandler(console_handler)
+
     mylogger.addHandler(file_handler)
     return mylogger
 
 
 if __name__ == "__main__":
     help = False
-    sig = "Status"
+    debug = True
+    sig = "status"
     service_list = "all"
 
-    logger = mylogger()
     # Get arguments
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hl:s:", ["help", "list=", "signal="])
@@ -71,13 +76,17 @@ if __name__ == "__main__":
             service_list = arg
         elif opt in ("-s", "--signal"):
             sig = arg
+        elif opt in ("-d", "--debug"):
+            debug = True
 
+    logger = mylogger(debug)
     if not sig in ["status", "start", "restart", "stop"]:
         logger.error("Wrong signal %s" % sig)
         sys.exit(1)
 
     if help:
         helper()
+        sys.exit(0)
 
     if sig == "restart":
         cmd = "python %s -s stop -l %s" % (os.path.abspath(__file__), service_list)
