@@ -1,6 +1,6 @@
+#!/usr/bin/env python
 # Script that allow to turn on/off the My_Homessistant app by stopping flask
 # and set state in myh.json used in the manager
-import errno
 import getopt
 import json
 import logging

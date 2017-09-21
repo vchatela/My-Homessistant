@@ -39,6 +39,14 @@ chmod +x install/setup.sh
 sudo bash install/setup.sh /abs/path/to/My-Homessitant user_to_run
 ```
 
+## Services
+### Démarrage
+```
+python myh.py -s start -l all
+```
+### Accès Flask
+[http://rpi_hostname:5005/](http://rpi_hostname:5005/)
+
 ## Tech
 ### Git
 * Submodules

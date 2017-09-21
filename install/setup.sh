@@ -13,7 +13,7 @@ if [ "$#" -eq 3 ]; then
 fi
 
 # Execute rights for sh scripts
-chmod +x $MYH_HOME/install/*.sh $MYH_HOME/install/mysql/*.sh
+chmod +x $MYH_HOME/install/*.sh $MYH_HOME/install/mysql/*.sh $MYH_HOME/etc/init.d/*
 
 # Prepare shell
 zshrc=/home/$MYH_USER/.zshrc
@@ -24,6 +24,10 @@ grep -qF "$LINE" "$bashrc" || echo "$LINE" >> "$bashrc"
 grep -qF "$LINE" "$zshrc" || echo "$LINE" >> "$zshrc"
 
 LINE="export PYTHONPATH=\$PYTHONPATH:$MYH_HOME"
+grep -qF "$LINE" "$bashrc" || echo "$LINE" >> "$bashrc"
+grep -qF "$LINE" "$zshrc" || echo "$LINE" >> "$zshrc"
+
+LINE='export PATH=$MYH_HOME:\$PATH'
 grep -qF "$LINE" "$bashrc" || echo "$LINE" >> "$bashrc"
 grep -qF "$LINE" "$zshrc" || echo "$LINE" >> "$zshrc"
 
