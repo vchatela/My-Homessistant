@@ -27,7 +27,7 @@ LINE="export PYTHONPATH=\$PYTHONPATH:$MYH_HOME"
 grep -qF "$LINE" "$bashrc" || echo "$LINE" >> "$bashrc"
 grep -qF "$LINE" "$zshrc" || echo "$LINE" >> "$zshrc"
 
-LINE='export PATH=$MYH_HOME:\$PATH'
+LINE='export PATH=$MYH_HOME/etc/init.d:\$PATH'
 grep -qF "$LINE" "$bashrc" || echo "$LINE" >> "$bashrc"
 grep -qF "$LINE" "$zshrc" || echo "$LINE" >> "$zshrc"
 
