@@ -1,7 +1,7 @@
 {
   "2": {
-    "state": "OFF",
-    "type": "HEATER",
+    "plug_state": "ON",
+    "type": "MOSQUITO",
     "plug_id": 12325261,
     "description": "Prise n 2 - Chauffage ou Anti Moustique",
     "remain_time_update": 0,

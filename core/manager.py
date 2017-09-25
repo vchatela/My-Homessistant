@@ -54,10 +54,10 @@ class Manager():
         plug_id = str(self.__plugs_dict[plug_number]["plug_id"])
         command = " ".join(
             [str(os.path.join(os.environ["MYH_HOME"], "bin", "radioEmission")), self.__radio_wiringpi_number, plug_id,
-             "1", new_state])
+             "1", new_state.lower()])
         self.logger.debug("Command launched : " + command)
         os.system(command)
-        self.__plugs_dict[plug_number]["state"] = new_state
+        self.__plugs_dict[plug_number]["plug_state"] = new_state.lower()
         with open(self.__plugs_file, 'w') as f:
             json.dump(self.__plugs_dict, f)
         self.reset_last_update(plug_number)
@@ -105,14 +105,15 @@ class Manager():
             if not self.__plugs_dict[plug_number]["type"] == row[db_struct["plug_type"]]:
                 break
             # If here, the rules match so update the plug into plugs
-            self.update_plug(plug_number, row[db_struct["temp_ref"]], row[db_struct["plug_state"]])
+            new_plug_state = "on" if row[db_struct["plug_state"]] else "off"
+            self.update_plug(plug_number, row[db_struct["temp_ref"]], new_plug_state)
 
     def apply_actions(self):
         for plug_number in self.__plugs_dict:
             plug_dict = self.__plugs_dict[plug_number]
             # If here the plug matched for this rule
             # HEATER case
-            if plug_dict["state"].lower() == "on":
+            if plug_dict["plug_state"].lower() == "on":
                 if plug_dict["type"] == "HEATER":
                     if self.__weather_dict["temp_avg"] < plug_dict["temp_ref"]:
                         # Update after 10 minutes minimum before last change
