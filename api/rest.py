@@ -43,18 +43,24 @@ def command():
 
 ####
 
-@app.route("/plugs",methods=['GET','POST'])
+@app.route("/plugs", methods=['GET', 'POST'])
 def plugs():
     with open(os.path.join(os.environ["MYH_HOME"], "data", "plugs.json"), 'r') as plugs_file:
         plug_data = json.load(plugs_file)
     if request.method == 'GET':
-            return jsonify(plug_data)
+        return jsonify(plug_data)
     else:
-        content = request.get_json(silent=True)
+        content = request.get_json()
         # Compare two structs
-        if jsondiff.diff(plug_data,content):
-            raise "TODO"
-        return content
+        diff = jsondiff.diff(plug_data, content)
+        if not diff.keys():
+            # save the action for manager
+            with open(os.path.join(os.environ["MYH_HOME"], "data", "plugs.json"), 'w') as plugs_file:
+                json.dump(content, plugs_file)
+                return "done"
+        else:
+            return "Error in structure !"
+
 
 @app.route("/deg_by_min")
 def compute():

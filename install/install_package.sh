@@ -15,6 +15,8 @@ pip install --upgrade pip
 # For OpenWeatherMap wrapper
 pip install pyowm
 pip install rson
+# For rest API
+pip install jsondiff
 
 # Install imported Libraries
 ## Adafruit Python DHT
