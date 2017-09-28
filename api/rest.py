@@ -2,8 +2,8 @@ import json
 import logging
 import os
 from logging.handlers import RotatingFileHandler
-
-from flask import Flask, render_template, request
+import jsondiff
+from flask import Flask, render_template, request, jsonify
 
 import core.database as db
 import deg_by_min
@@ -17,6 +17,7 @@ def test():
     return "running"
 
 
+####  Must be removed
 @app.route("/command")
 def command():
     action = request.args.get("action").lower()
@@ -39,6 +40,21 @@ def command():
 
     return "done"
 
+
+####
+
+@app.route("/plugs",methods=['GET','POST'])
+def plugs():
+    with open(os.path.join(os.environ["MYH_HOME"], "data", "plugs.json"), 'r') as plugs_file:
+        plug_data = json.load(plugs_file)
+    if request.method == 'GET':
+            return jsonify(plug_data)
+    else:
+        content = request.get_json(silent=True)
+        # Compare two structs
+        if jsondiff.diff(plug_data,content):
+            raise "TODO"
+        return content
 
 @app.route("/deg_by_min")
 def compute():
