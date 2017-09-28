@@ -59,6 +59,13 @@ def mylogger(debug):
     mylogger.addHandler(file_handler)
     return mylogger
 
+def flask_is_up():
+    cmd = "bash $MYH_HOME/etc/init.d/myh_check_flask.sh"
+    logger.debug("Verify flask running.")
+    logger.debug("Command launched : " + cmd)
+    process = subprocess.Popen(cmd, shell=True)
+    process.wait()
+    return process.returncode
 
 if __name__ == "__main__":
     help = False
@@ -116,19 +123,16 @@ if __name__ == "__main__":
         if service == "flask":
             if sig == "status":
                 if myh_dict["flask_state"].lower() == "on":
-                    logger.info("Flask is running")
+                    logger.info("Flask should be running")
+                    if flask_is_up() != 0:
+                        logger.info("Flask is actually stopped")
                 else:
                     logger.info("Flask is not running")
                 continue
             if myh_dict["flask_state"].lower() == "on":
                 if sig == "start":
                     # Verification
-                    cmd = "bash $MYH_HOME/etc/init.d/myh_check_flask.sh"
-                    logger.debug("Verify flask running.")
-                    logger.debug("Command launched : " + cmd)
-                    process = subprocess.Popen(cmd, shell=True)
-                    process.wait()
-                    if process.returncode != 0:
+                    if flask_is_up() != 0:
                         myh_dict["flask_state"] = "OFF"
                         with open(myh_file, 'w') as f:
                             myh_dict = json.dump(myh_dict, f)
