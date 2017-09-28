@@ -200,7 +200,7 @@ class Application:
             plug_dict = self.__plugs_dict[plug_number]
             # If here the plug matched for this rule
             # HEATER case
-            if plug_dict["state"].lower() == "on":
+            if plug_dict["plug_state"].lower() == "on":
                 return 1
             else:
                 return 0
