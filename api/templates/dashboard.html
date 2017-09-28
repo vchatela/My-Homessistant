@@ -48,7 +48,7 @@
                 <div class="panel panel-default">
                     <div class="panel-heading">
                         <i class="fa fa-bar-chart-o fa-fw"></i> Graphique de Température
-                        <div class="pull-right">
+                        <!--<div class="pull-right">
                             <div class="btn-group">
                                 <button type="button" class="btn btn-default btn-xs dropdown-toggle"
                                         data-toggle="dropdown">
@@ -64,7 +64,7 @@
                                     </li>
                                 </ul>
                             </div>
-                        </div>
+                        </div>-->
                     </div>
                     <!-- /.panel-heading -->
                     <div class="panel-body">
@@ -75,7 +75,7 @@
                 <div class="panel panel-default">
                     <div class="panel-heading">
                         <i class="fa fa-clock-o fa-fw"></i> Graphique d'Humidité
-                        <div class="pull-right">
+                        <!--<div class="pull-right">
                             <div class="btn-group">
                                 <button type="button" class="btn btn-default btn-xs dropdown-toggle"
                                         data-toggle="dropdown">
@@ -91,7 +91,7 @@
                                     </li>
                                 </ul>
                             </div>
-                        </div>
+                        </div>-->
                     </div>
                     <!-- /.panel-heading -->
                     <div class="panel-body">
@@ -106,6 +106,23 @@
                 <div class="panel panel-default">
                     <div class="panel-heading">
                         <i class="fa fa-bell fa-fw"></i> Tableau Récapitulatif
+                        <!--<div class="pull-right">
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-default btn-xs dropdown-toggle"
+                                        data-toggle="dropdown">
+                                    Durée
+                                    <span class="caret"></span>
+                                </button>
+                                <ul class="dropdown-menu pull-right" role="menu">
+                                    <li><a href="#">24H</a>
+                                    </li>
+                                    <li><a href="#">7 Jours</a>
+                                    </li>
+                                    <li><a href="#">1 Mois</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>-->
                     </div>
                     <!-- /.panel-heading -->
                     <div class="panel-body">
@@ -157,18 +174,23 @@
 <script>
 
     act = {{ data_dict["t_act"] | safe }}
-    document.getElementById("act").innerHTML = act;
+    document.getElementById("act").innerHTML = act + " °C";
     avg = {{ data_dict["t_avg"] | safe }}
-    document.getElementById("avg").innerHTML = avg;
+    document.getElementById("avg").innerHTML = avg + " °C";
     min = {{ data_dict["t_min"] | safe }}
-    document.getElementById("min").innerHTML = min;
+    document.getElementById("min").innerHTML = min + " °C";
     max = {{ data_dict["t_max"] | safe }}
-    document.getElementById("max").innerHTML = max;
+    document.getElementById("max").innerHTML = max + " °C";
 
 
     google.charts.load('current', {packages: ['corechart', 'line'], 'language': 'fr'});
     google.charts.setOnLoadCallback(drawChart_T);
     google.charts.setOnLoadCallback(drawChart_H);
+
+    Date.prototype.addMilli = function(m) {
+       this.setTime(this.getTime() + m);
+       return this;
+    };
 
     function drawChart_T() {
         row_T = {{ data_dict["row_T"] | safe }}
@@ -179,11 +201,24 @@
         data_T.addColumn('number', 'T° In');
         data_T.addColumn({type: 'boolean', role: 'scope'});
         data_T.addColumn('number', 'T° Out');
+        var last_date = null;
+        var dummy_elem = [];
         for (var i = 0; i < row_T.length; i++) {
-            elem = row_T[i];
-            elem[0] = new Date(elem[0][0], elem[0][1], elem[0][2], elem[0][3], elem[0][4], elem[0][5]);
+            var elem = row_T[i];
+            elem[0] = new Date(elem[0][0], parseInt(elem[0][1])-1, elem[0][2], elem[0][3], elem[0][4], elem[0][5]);
+            if (last_date !== null) {
+                var hours_diff = Math.abs(last_date - elem[0]) / 36e5;
+                if (hours_diff >= 1) {
+                    // insert dummy data
+                    dummy_elem = [];
+                    dummy_elem.push(last_date.addMilli(1),null,null,null);
+                    data_T.addRow(dummy_elem);
+                    console.log(dummy_elem);
+                }
+            }
             elem[2] = Boolean(elem[2]);
             data_T.addRow(elem);
+            last_date = elem[0]
         }
 
         var options_T = {
@@ -202,7 +237,8 @@
             series: {
                 1: {curveType: 'function'}
             },
-            width: '100%'
+            width: '100%',
+            interpolateNulls: false
         };
         var chart_T = new google.visualization.LineChart(document.getElementById('chart_T_div'));
         dateFormatter.format(data_T, 0);
@@ -222,11 +258,22 @@
         data_H.addColumn('number', 'H° In');
         data_H.addColumn({type: 'boolean', role: 'scope'});
         data_H.addColumn('number', 'H° Out');
-        for (var j = 0; j < row_H.length; j++) {
-            elem = row_H[j];
-            elem[0] = new Date(elem[0][0], elem[0][1], elem[0][2], elem[0][3], elem[0][4], elem[0][5]);
+        var last_date = null;
+        for (var i = 0; i < row_H.length; i++) {
+            var elem = row_H[i];
+            elem[0] = new Date(elem[0][0], parseInt(elem[0][1])-1, elem[0][2], elem[0][3], elem[0][4], elem[0][5]);
+            if (last_date !== null) {
+                var hours_diff = Math.abs(last_date - elem[0]) / 36e5;
+                if (hours_diff >= 1) {
+                    // insert dummy data
+                    var dummy_elem = [];
+                    dummy_elem.push(last_date.addMilli(1),null,null,null);
+                    data_H.addRow(dummy_elem);
+                }
+            }
             elem[2] = Boolean(elem[2]);
             data_H.addRow(elem);
+            last_date = elem[0]
         }
 
         var options_H = {
@@ -249,7 +296,8 @@
             series: {
                 1: {curveType: 'function'}
             },
-            width: '100%'
+            width: '100%',
+            interpolateNulls: false
         };
         var chart_H = new google.visualization.LineChart(document.getElementById('chart_H_div'));
         dateFormatter.format(data_H, 0);
