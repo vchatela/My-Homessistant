@@ -60,20 +60,6 @@ class Manager():
         self.__plugs_dict[plug_number]["plug_state"] = new_state.lower()
         with open(self.__plugs_file, 'w') as f:
             json.dump(self.__plugs_dict, f)
-        self.reset_last_update(plug_number)
-
-    def decrease_last_update(self, plug_number):
-        if self.__plugs_dict[plug_number]["remain_time_update"] > 0:
-            self.__plugs_dict[plug_number]["remain_time_update"] -= 1
-        else:
-            self.__plugs_dict[plug_number]["remain_time_update"] = 0
-        with open(self.__plugs_file, 'w') as f:
-            json.dump(self.__plugs_dict, f)
-
-    def reset_last_update(self, plug_number):
-        self.__plugs_dict[plug_number]["remain_time_update"] = self.__plugs_dict[plug_number]["default_time_update"]
-        with open(self.__plugs_file, 'w') as f:
-            json.dump(self.__plugs_dict, f)
 
     def update_plug(self, plug_number, temp, state):
         self.__plugs_dict[plug_number]["temp_ref"] = temp
@@ -122,7 +108,6 @@ class Manager():
                             self.turn_on_off_plug(plug_number, "on")
                     else:
                         self.turn_on_off_plug(plug_number, "off")
-                    self.decrease_last_update(plug_number)
                 # MOSQUITO case
                 elif plug_dict["type"] == "MOSQUITO":
                     self.turn_on_off_plug(plug_number, plug_dict["plug_state"])
