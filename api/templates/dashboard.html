@@ -201,22 +201,40 @@
         data_T.addColumn('number', 'T° In');
         data_T.addColumn({type: 'boolean', role: 'scope'});
         data_T.addColumn('number', 'T° Out');
+        data_T.addColumn({type: 'string', role: 'annotation'});
+        data_T.addColumn({type: 'string', role: 'annotationText'});
         var last_date = null;
+        var last_velux_state = null;
         var dummy_elem = [];
         for (var i = 0; i < row_T.length; i++) {
             var elem = row_T[i];
+            // Date
             elem[0] = new Date(elem[0][0], parseInt(elem[0][1])-1, elem[0][2], elem[0][3], elem[0][4], elem[0][5]);
             if (last_date !== null) {
                 var hours_diff = Math.abs(last_date - elem[0]) / 36e5;
                 if (hours_diff >= 1) {
                     // insert dummy data
                     dummy_elem = [];
-                    dummy_elem.push(last_date.addMilli(1),null,null,null);
+                    dummy_elem.push(last_date.addMilli(1),null,null,null,null,null);
                     data_T.addRow(dummy_elem);
-                    console.log(dummy_elem);
                 }
             }
+            // Heater on
             elem[2] = Boolean(elem[2]);
+            // Velux State
+            if(last_velux_state === "0" && elem[3] === "1"){
+                elem.push("open","velux opened");
+            }
+            else {
+                if(last_velux_state === "1" && elem[3] === "0"){
+                    elem.push("close","velux closed");
+                }
+                else{
+                    elem.push(null,null);
+                }
+            }
+            last_velux_state = elem[3];
+
             data_T.addRow(elem);
             last_date = elem[0]
         }
@@ -238,7 +256,10 @@
                 1: {curveType: 'function'}
             },
             width: '100%',
-            interpolateNulls: false
+            interpolateNulls: false,
+            annotations: {
+                style: 'line'
+            }
         };
         var chart_T = new google.visualization.LineChart(document.getElementById('chart_T_div'));
         dateFormatter.format(data_T, 0);
@@ -258,20 +279,40 @@
         data_H.addColumn('number', 'H° In');
         data_H.addColumn({type: 'boolean', role: 'scope'});
         data_H.addColumn('number', 'H° Out');
+        data_H.addColumn({type: 'string', role: 'annotation'});
+        data_H.addColumn({type: 'string', role: 'annotationText'});
         var last_date = null;
+        var last_velux_state = null;
+        var dummy_elem = [];
         for (var i = 0; i < row_H.length; i++) {
             var elem = row_H[i];
+            // Date
             elem[0] = new Date(elem[0][0], parseInt(elem[0][1])-1, elem[0][2], elem[0][3], elem[0][4], elem[0][5]);
             if (last_date !== null) {
                 var hours_diff = Math.abs(last_date - elem[0]) / 36e5;
                 if (hours_diff >= 1) {
                     // insert dummy data
-                    var dummy_elem = [];
-                    dummy_elem.push(last_date.addMilli(1),null,null,null);
+                    dummy_elem = [];
+                    dummy_elem.push(last_date.addMilli(1),null,null,null,null,null);
                     data_H.addRow(dummy_elem);
                 }
             }
+            // Heater on
             elem[2] = Boolean(elem[2]);
+            // Velux State
+            if(last_velux_state === "0" && elem[3] === "1"){
+                elem.push("open","velux opened");
+            }
+            else {
+                if(last_velux_state === "1" && elem[3] === "0"){
+                    elem.push("close","velux closed");
+                }
+                else{
+                    elem.push(null,null);
+                }
+            }
+            last_velux_state = elem[3];
+
             data_H.addRow(elem);
             last_date = elem[0]
         }
@@ -297,7 +338,10 @@
                 1: {curveType: 'function'}
             },
             width: '100%',
-            interpolateNulls: false
+            interpolateNulls: false,
+            annotations: {
+                style: 'line'
+            }
         };
         var chart_H = new google.visualization.LineChart(document.getElementById('chart_H_div'));
         dateFormatter.format(data_H, 0);

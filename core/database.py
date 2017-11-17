@@ -43,7 +43,7 @@ class MyHomessistantDatabase():
             self.logger.error(str(e))
             exit(-1)
 
-    def insert_weather(self, temperature_in, temperature_out, humidity_in, humidity_out, heater_state):
+    def insert_weather(self, temperature_in, temperature_out, humidity_in, humidity_out, heater_state, velux_state):
         try:
             cursor = self.__database.cursor()
             # Date - In - Out - State
@@ -55,7 +55,8 @@ class MyHomessistantDatabase():
                 humidity_in = "NULL"
             if humidity_out is None:
                 humidity_out = "NULL"
-            velux_state = "NULL"
+            if velux_state is None:
+                velux_state = "NULL"
             query = "INSERT INTO Weather VALUES (TIMESTAMP(\'{0}\'),{1},{2},{3},{4},{5},{6})".format(
                 str(datetime.now()),
                 str(temperature_in),
@@ -100,7 +101,7 @@ class MyHomessistantDatabase():
             cursor = self.__database.cursor()
             limit_date = (datetime.now() - timedelta(days=days)).replace(microsecond=0)
             # Row_T
-            query = "SELECT date, temperature_in, heater_state, temperature_out FROM `Weather` WHERE date > '" + str(
+            query = "SELECT date, temperature_in, heater_state, temperature_out, is_velux_open FROM `Weather` WHERE date > '" + str(
                 limit_date) + "'"
             self.logger.debug("Query executed : " + query)
             cursor.execute(query)
@@ -111,7 +112,7 @@ class MyHomessistantDatabase():
                 x[0] = [str(x[0].year), str(x[0].month), str(x[0].day), str(x[0].hour), str(x[0].minute),
                         str(x[0].second)]
             # Row_H
-            query = "SELECT date, humidity_in, heater_state, humidity_out FROM `Weather` WHERE date > '" + str(
+            query = "SELECT date, humidity_in, heater_state, humidity_out, is_velux_open FROM `Weather` WHERE date > '" + str(
                 limit_date) + "'"
             self.logger.debug("Query executed : " + query)
             cursor.execute(query)
