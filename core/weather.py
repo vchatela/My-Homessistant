@@ -5,7 +5,7 @@ import os
 import time
 from abc import ABCMeta, abstractmethod
 from logging.handlers import RotatingFileHandler
-
+import RPi.GPIO as GPIO
 import Adafruit_DHT
 import numpy
 import pyowm
@@ -17,6 +17,22 @@ os.system('/sbin//modprobe w1-therm')
 
 wiring_pin_rpi = 29
 am2302_pin = 27
+
+
+
+class HallSensor:
+    def __init__(self, pin):
+        self.pin = pin
+
+    def is_velux_open(self):
+        GPIO.setmode(GPIO.BOARD)
+        GPIO.setup(self.pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        if GPIO.input(self.pin):
+            print "No Magnet"
+            return True
+        else:
+            print "Magnet"
+            return False
 
 
 class TemperatureSensorAbstract:
@@ -146,18 +162,21 @@ class Application:
             self.sensors_list.append(DS18B20TemperatureSensor(ds_sensor_dir))
         # AM 2302
         self.sensors_list.append(AM2302TemperatureSensor(Adafruit_DHT.AM2302, am2302_pin))
+        # Hall sensor
+        self.sensors_list.append(HallSensor(11))
 
     def get_average_temp(self):
         temp_list = []
         for sensor in self.sensors_list:
-            temp_tmp = sensor.get_temperature()
-            if temp_tmp is None:
-                continue
-            temp_list.append(temp_tmp)
-            if hasattr(sensor, "device_file"):
-                self.logger.debug("Temperature of " + sensor.device_file + " is " + str(temp_tmp) + " C")
-            else:
-                self.logger.debug("Temperature is " + str(temp_tmp))
+            if "get_temperature" in dir(sensor):
+                temp_tmp = sensor.get_temperature()
+                if temp_tmp is None:
+                    continue
+                temp_list.append(temp_tmp)
+                if hasattr(sensor, "device_file"):
+                    self.logger.debug("Temperature of " + sensor.device_file + " is " + str(temp_tmp) + " C")
+                else:
+                    self.logger.debug("Temperature is " + str(temp_tmp))
         if temp_list == []:
             return None
         average_temp = numpy.average(temp_list)
@@ -205,9 +224,15 @@ class Application:
             else:
                 return 0
 
+    def is_velux_open(self):
+        for sensor in self.sensors_list:
+            if "is_velux_open" in dir(sensor):
+                is_open = sensor.is_velux_open()
+                self.logger.debug("Velux is open : " + str(is_open))
+                return is_open
+        return None
 
 # Main
-
 if __name__ == "__main__":
     app = Application()
 
@@ -221,8 +246,10 @@ if __name__ == "__main__":
     # Get Average humidity
     hum_avg = app.get_humidity()
     hum_out = app.get_out_humidity()
+    # Get Velux State
+    velux_state = app.is_velux_open()
 
     heater_state = app.get_heater_state()
 
     app.update_weather_data(temp_avg, temp_out, hum_avg, hum_out)
-    app.database.insert_weather(temp_avg, temp_out, hum_avg, hum_out, heater_state)
+    app.database.insert_weather(temp_avg, temp_out, hum_avg, hum_out, heater_state,velux_state)

@@ -43,7 +43,7 @@ class MyHomessistantDatabase():
             self.logger.error(str(e))
             exit(-1)
 
-    def insert_weather(self, temperature_in, temperature_out, humidity_in, humidity_out, heater_state):
+    def insert_weather(self, temperature_in, temperature_out, humidity_in, humidity_out, heater_state, velux_state):
         try:
             cursor = self.__database.cursor()
             # Date - In - Out - State
@@ -55,7 +55,8 @@ class MyHomessistantDatabase():
                 humidity_in = "NULL"
             if humidity_out is None:
                 humidity_out = "NULL"
-            velux_state = "NULL"
+            if velux_state is None:
+                velux_state = "NULL"
             query = "INSERT INTO Weather VALUES (TIMESTAMP(\'{0}\'),{1},{2},{3},{4},{5},{6})".format(
                 str(datetime.now()),
                 str(temperature_in),
