@@ -9,7 +9,7 @@ from core.database import MyHomessistantDatabase
 db_struct = {"temp_ref": 0, "plug_state": 1, "start_time": 2, "day_of_week": 3, "plug_type": 4, "plug_number": 5}
 
 
-class Manager():
+class Manager:
     def __init__(self):
         # Check server allow to run
         __myh_file = os.path.join(os.environ["MYH_HOME"], "data", "myh.json")
@@ -72,7 +72,7 @@ class Manager():
 
     def check_rules(self):
         cursor_prog = self.database.get_cursor_programmation()
-        while (1):
+        while 1:
             row = cursor_prog.fetchone()
             # Manage end of list
             if row is None:
@@ -101,14 +101,20 @@ class Manager():
         for plug_number in self.__plugs_dict:
             plug_dict = self.__plugs_dict[plug_number]
             # If here the plug matched for this rule
+            # Turn off heater/mosquito if velux is open
+            if plug_dict["type"] in ["HEATER", "MOSQUITO"] and bool(self.__weather_dict["velux_open"]):
+                if plug_dict["plug_state"].lower() == "on":
+                    # TODO Send Android Notification - Plug must be ON but velux is open
+                    # On notification : click to restart
+                    self.logger.debug(plug_dict["type"] + " turned off because of velux open")
+                self.turn_on_off_plug(plug_number, "off")
+                continue
             # HEATER case
             if plug_dict["plug_state"].lower() == "on":
                 if plug_dict["type"] == "HEATER":
                     if self.__weather_dict["temp_avg"] < plug_dict["temp_ref"]:
-                        # Update after 10 minutes minimum before last change
-                        if plug_dict["remain_time_update"] == 0:
-                            # Turn on heater
-                            self.turn_on_off_plug(plug_number, "on")
+                        #TODO Update after 10 minutes minimum before last change
+                        self.turn_on_off_plug(plug_number, "on")
                     else:
                         self.turn_on_off_plug(plug_number, "off")
                 # MOSQUITO case

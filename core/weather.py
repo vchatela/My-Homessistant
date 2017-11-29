@@ -34,10 +34,8 @@ class HallSensor:
             raise Exception("GPIO MODE %s not supported" % GPIO_MODE)
         GPIO.setup(self.pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         if GPIO.input(self.pin):
-            print "No Magnet"
             return True
         else:
-            print "Magnet"
             return False
 
 
@@ -151,10 +149,10 @@ class Application:
         self.logger.addHandler(file_handler)
 
     def insert_weather(self, temp_avg, temp_out, hum_avg, hum_out, heater_state, velux_state):
-        if not self.database:
+        if not hasattr(self, "database") or not self.database:
             self.database = MyHomessistantDatabase()
             self.database.connection()
-        app.database.insert_weather(temp_avg, temp_out, hum_avg, hum_out, heater_state, velux_state)
+        self.database.insert_weather(temp_avg, temp_out, hum_avg, hum_out, heater_state, velux_state)
 
     def __del__(self):
         if hasattr(self, "database") and self.database:
@@ -186,7 +184,7 @@ class Application:
                     self.logger.debug("Temperature of " + sensor.device_file + " is " + str(temp_tmp) + " C")
                 else:
                     self.logger.debug("Temperature is " + str(temp_tmp))
-        if temp_list == []:
+        if not temp_list:
             return None
         average_temp = numpy.average(temp_list)
         self.logger.debug("Average temp is " + str(average_temp) + " C")
@@ -199,27 +197,31 @@ class Application:
                 hum_tmp = sensor.get_humidity()
                 hum_list.append(hum_tmp)
                 self.logger.debug("Inside humidity is " + str(hum_tmp))
-        if hum_list == []:
+        if not hum_list:
             average_hum = None
         else:
             average_hum = numpy.average(hum_list)
         self.logger.debug("Average humidity is " + str(average_hum) + " %")
         return average_hum
 
-    def get_out_temp(self):
+    @staticmethod
+    def get_out_temp():
         out_sensor = OutdoorAPITemperatureSensor()
         return out_sensor.get_temperature()
 
-    def get_out_humidity(self):
+    @staticmethod
+    def get_out_humidity():
         out_sensor = OutdoorAPITemperatureSensor()
         return out_sensor.get_humidity()
 
     # Files for flask api
-    def update_weather_data(self, temp_avg, temp_out, hum_avg, hum_out):
+    def update_weather_data(self, temp_avg, temp_out, hum_avg, hum_out, heater_state, velux_open):
         self.__weather_dict["temp_avg"] = temp_avg
         self.__weather_dict["temp_out"] = temp_out
         self.__weather_dict["hum_avg"] = hum_avg
         self.__weather_dict["hum_out"] = hum_out
+        self.__weather_dict["heater_state"] = heater_state
+        self.__weather_dict["velux_open"] = velux_open
         with open(self.__weather_file, 'w') as f:
             json.dump(self.__weather_dict, f)
 
@@ -264,5 +266,5 @@ if __name__ == "__main__":
     # Get Heater State
     heater_state = app.get_heater_state()
 
-    app.update_weather_data(temp_avg, temp_out, hum_avg, hum_out)
+    app.update_weather_data(temp_avg, temp_out, hum_avg, hum_out, heater_state, velux_state)
     app.insert_weather(temp_avg, temp_out, hum_avg, hum_out, heater_state, velux_state)
