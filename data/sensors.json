@@ -4,8 +4,7 @@
   "A1120"     : 17,
   "AM2032"    : 27,
   "Light"     : 22,
-  "RainRed"   : 5,
-  "RainBlack" : 6,
+  "Rain"      : 6,
   "Sound"     : 13,
   "__comment" : "HF is on wiring pin",
   "HF"        : 29

@@ -8,7 +8,7 @@ with open('$MYH_HOME/data/sensors.json') as sensors_file:
     sensors_data = json.load(sensors_file)
     PIN = sensors_data["Light"]
 
-GPIO.setmode(GPIO.BOARD)
+GPIO.setmode(GPIO.BCM)
 GPIO.setup(PIN, GPIO.IN)
 
 def read_loop():

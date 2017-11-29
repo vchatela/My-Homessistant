@@ -20,6 +20,7 @@ with open(MYH_HOME + '/data/sensors.json') as sensors_file:
     sensors_data = json.load(sensors_file)
     GPIO_MODE = sensors_data["GPIO_MODE"]
     am2302_pin = int(sensors_data["AM2032"])
+    hall_pin = int(sensors_data["A1120"])
 
 
 class HallSensor:
@@ -28,7 +29,7 @@ class HallSensor:
 
     def is_velux_open(self):
         if GPIO_MODE == "BCM":
-            GPIO.setmode(GPIO.BOARD)
+            GPIO.setmode(GPIO.BCM)
         else:
             raise Exception("GPIO MODE %s not supported" % GPIO_MODE)
         GPIO.setup(self.pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -171,7 +172,7 @@ class Application:
         # AM 2302
         self.sensors_list.append(AM2302TemperatureSensor(Adafruit_DHT.AM2302, am2302_pin))
         # Hall sensor
-        self.sensors_list.append(HallSensor(11))
+        self.sensors_list.append(HallSensor(hall_pin))
 
     def get_average_temp(self):
         temp_list = []
