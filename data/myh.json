@@ -1,6 +1,5 @@
 {
   "flask_state": "OFF",
   "flask_pid": -1,
-  "app_state": "ON",
-  "radio_wiringpi": 29
+  "app_state": "ON"
 }

@@ -5,8 +5,9 @@ import os
 import time
 from abc import ABCMeta, abstractmethod
 from logging.handlers import RotatingFileHandler
-import RPi.GPIO as GPIO
+
 import Adafruit_DHT
+import RPi.GPIO as GPIO
 import numpy
 import pyowm
 
@@ -14,10 +15,11 @@ from core.database import MyHomessistantDatabase
 
 os.system('/sbin//modprobe w1-gpio')
 os.system('/sbin//modprobe w1-therm')
-
-wiring_pin_rpi = 29
-am2302_pin = 27
-
+MYH_HOME = os.environ["MYH_HOME"]
+with open(MYH_HOME + '/data/sensors.json') as sensors_file:
+    sensors_data = json.load(sensors_file)
+    GPIO_MODE = sensors_data["GPIO_MODE"]
+    am2302_pin = int(sensors_data["AM2032"])
 
 
 class HallSensor:
@@ -25,7 +27,10 @@ class HallSensor:
         self.pin = pin
 
     def is_velux_open(self):
-        GPIO.setmode(GPIO.BOARD)
+        if GPIO_MODE == "BCM":
+            GPIO.setmode(GPIO.BOARD)
+        else:
+            raise Exception("GPIO MODE %s not supported" % GPIO_MODE)
         GPIO.setup(self.pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         if GPIO.input(self.pin):
             print "No Magnet"
@@ -111,17 +116,14 @@ class OutdoorAPITemperatureSensor(TemperatureSensorAbstract):
 
 
 class Application:
-    def __init__(self):
+    def __init__(self, is_test=False):
         # Check server allow to run
         __myh_file = os.path.join(os.environ["MYH_HOME"], "data", "myh.json")
         with open(__myh_file, 'r') as __myh_file_data:
             __myh_dict = json.load(__myh_file_data)
-            if not __myh_dict["app_state"].lower() == "on":
+            if not __myh_dict["app_state"].lower() == "on" and not is_test:
                 exit(0)
-        # Do work
         self.sensors_list = []
-        self.database = MyHomessistantDatabase()
-        self.database.connection()
         # Dicts
         self.__myh_db_file = os.path.join(os.environ["MYH_HOME"], "data", "myh_db.json")
         with open(self.__myh_db_file, 'r') as myh_db_file_data:
@@ -146,6 +148,12 @@ class Application:
 
         self.logger.addHandler(console_handler)
         self.logger.addHandler(file_handler)
+
+    def insert_weather(self, temp_avg, temp_out, hum_avg, hum_out, heater_state, velux_state):
+        if not self.database:
+            self.database = MyHomessistantDatabase()
+            self.database.connection()
+        app.database.insert_weather(temp_avg, temp_out, hum_avg, hum_out, heater_state, velux_state)
 
     def __del__(self):
         if hasattr(self, "database") and self.database:
@@ -190,7 +198,10 @@ class Application:
                 hum_tmp = sensor.get_humidity()
                 hum_list.append(hum_tmp)
                 self.logger.debug("Inside humidity is " + str(hum_tmp))
-        average_hum = numpy.average(hum_list)
+        if hum_list == []:
+            average_hum = None
+        else:
+            average_hum = numpy.average(hum_list)
         self.logger.debug("Average humidity is " + str(average_hum) + " %")
         return average_hum
 
@@ -232,6 +243,7 @@ class Application:
                 return is_open
         return None
 
+
 # Main
 if __name__ == "__main__":
     app = Application()
@@ -248,8 +260,8 @@ if __name__ == "__main__":
     hum_out = app.get_out_humidity()
     # Get Velux State
     velux_state = app.is_velux_open()
-
+    # Get Heater State
     heater_state = app.get_heater_state()
 
     app.update_weather_data(temp_avg, temp_out, hum_avg, hum_out)
-    app.database.insert_weather(temp_avg, temp_out, hum_avg, hum_out, heater_state,velux_state)
+    app.insert_weather(temp_avg, temp_out, hum_avg, hum_out, heater_state, velux_state)

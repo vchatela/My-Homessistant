@@ -13,11 +13,14 @@ class Manager():
     def __init__(self):
         # Check server allow to run
         __myh_file = os.path.join(os.environ["MYH_HOME"], "data", "myh.json")
+        __sensor_file = os.path.join(os.environ["MYH_HOME"], "data", "sensors.json")
         with open(__myh_file, 'r') as __myh_file_data:
             __myh_dict = json.load(__myh_file_data)
             if not __myh_dict["app_state"].lower() == "on":
                 exit(0)
-            self.__radio_wiringpi_number = str(__myh_dict["radio_wiringpi"])
+        with open(__sensor_file, 'r') as __sensor_file_data:
+            __sensor_dict = json.load(__sensor_file_data)
+            self.__radio_wiringpi_number = str(__sensor_dict["HF"])
         # Do work
         self.database = MyHomessistantDatabase()
         self.database.connection()
@@ -110,6 +113,8 @@ class Manager():
                         self.turn_on_off_plug(plug_number, "off")
                 # MOSQUITO case
                 elif plug_dict["type"] == "MOSQUITO":
+                    self.turn_on_off_plug(plug_number, plug_dict["plug_state"])
+                elif plug_dict["type"] == "LIGHT":
                     self.turn_on_off_plug(plug_number, plug_dict["plug_state"])
             else:
                 self.turn_on_off_plug(plug_number, "off")
