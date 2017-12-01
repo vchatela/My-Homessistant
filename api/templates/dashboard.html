@@ -198,11 +198,11 @@
         var data_T = new google.visualization.DataTable();
         var dateFormatter = new google.visualization.DateFormat({pattern: 'dd MMM yyyy HH:mm'});
         data_T.addColumn('datetime', 'Date');
+        data_T.addColumn({type: 'string', role: 'annotation'});
+        data_T.addColumn({type: 'string', role: 'annotationText'});
         data_T.addColumn('number', 'T° In');
         data_T.addColumn({type: 'boolean', role: 'scope'});
         data_T.addColumn('number', 'T° Out');
-        data_T.addColumn({type: 'string', role: 'annotation'});
-        data_T.addColumn({type: 'string', role: 'annotationText'});
         var last_date = null;
         var last_velux_state = null;
         var dummy_elem = [];
@@ -222,20 +222,23 @@
             // Heater on
             elem[2] = Boolean(elem[2]);
             // Velux State
-            if(last_velux_state === "0" && elem[3] === "1"){
-                elem.push("open","velux opened");
+            if(last_velux_state === 0 && elem[4] === 1){
+                elem.splice(1,0,"open");
+                elem.splice(2,0,"velux opened");
             }
             else {
-                if(last_velux_state === "1" && elem[3] === "0"){
-                    elem.push("close","velux closed");
+                if(last_velux_state === 1 && elem[4] === 0){
+                    elem.splice(1,0,"close");
+                    elem.splice(2,0,"velux closed");
                 }
                 else{
-                    elem.push(null,null);
+                    elem.splice(1,0,null);
+                    elem.splice(2,0,null);
                 }
             }
-            last_velux_state = elem[3];
-            elem.splice(3,1);
-
+            last_velux_state = elem[6]
+            elem.splice(6,1);
+            // Insertion
             data_T.addRow(elem);
             last_date = elem[0]
         }
@@ -277,11 +280,11 @@
         var data_H = new google.visualization.DataTable();
         var dateFormatter = new google.visualization.DateFormat({pattern: 'dd MMM yyyy HH:mm'});
         data_H.addColumn('datetime', 'Date');
+        data_H.addColumn({type: 'string', role: 'annotation'});
+        data_H.addColumn({type: 'string', role: 'annotationText'});
         data_H.addColumn('number', 'H° In');
         data_H.addColumn({type: 'boolean', role: 'scope'});
         data_H.addColumn('number', 'H° Out');
-        data_H.addColumn({type: 'string', role: 'annotation'});
-        data_H.addColumn({type: 'string', role: 'annotationText'});
         var last_date = null;
         var last_velux_state = null;
         var dummy_elem = [];
@@ -301,20 +304,23 @@
             // Heater on
             elem[2] = Boolean(elem[2]);
             // Velux State
-            if(last_velux_state === "0" && elem[3] === "1"){
-                elem.push("open","velux opened");
+            if(last_velux_state === 0 && elem[4] === 1){
+                elem.splice(1,0,"open");
+                elem.splice(2,0,"velux opened");
             }
             else {
-                if(last_velux_state === "1" && elem[3] === "0"){
-                    elem.push("close","velux closed");
+                if(last_velux_state === 1 && elem[4] === 0){
+                    elem.splice(1,0,"close");
+                    elem.splice(2,0,"velux closed");
                 }
                 else{
-                    elem.push(null,null);
+                    elem.splice(1,0,null);
+                    elem.splice(2,0,null);
                 }
             }
-            last_velux_state = elem[3];
-            elem.splice(3,1);
-            
+            last_velux_state = elem[6]
+            elem.splice(6,1);
+            // Insertion
             data_H.addRow(elem);
             last_date = elem[0]
         }
