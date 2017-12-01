@@ -64,9 +64,10 @@ class Manager:
         with open(self.__plugs_file, 'w') as f:
             json.dump(self.__plugs_dict, f)
 
-    def update_plug(self, plug_number, temp, state):
+    def update_plug(self, plug_number, temp, plug_state, mustbe_plug_state):
         self.__plugs_dict[plug_number]["temp_ref"] = temp
-        self.__plugs_dict[plug_number]["plug_state"] = state
+        self.__plugs_dict[plug_number]["plug_state"] = plug_state
+        self.__plugs_dict[plug_number]["plug_state_mustbe"] = mustbe_plug_state
         with open(self.__plugs_file, 'w') as f:
             json.dump(self.__plugs_dict, f)
 
@@ -95,7 +96,8 @@ class Manager:
                 break
             # If here, the rules match so update the plug into plugs
             new_plug_state = "on" if row[db_struct["plug_state"]] else "off"
-            self.update_plug(plug_number, row[db_struct["temp_ref"]], new_plug_state)
+            self.update_plug(plug_number, row[db_struct["temp_ref"]], new_plug_state,
+                             new_plug_state)  # Here we suppose the mustbe_plug_state is the real plug state
 
     def apply_actions(self):
         for plug_number in self.__plugs_dict:
@@ -109,11 +111,17 @@ class Manager:
                     self.logger.debug(plug_dict["type"] + " turned off because of velux open")
                 self.turn_on_off_plug(plug_number, "off")
                 continue
+            # If velux close : reapply state
+            elif plug_dict["type"] in ["HEATER", "MOSQUITO"] and not bool(self.__weather_dict["velux_open"]):
+                if plug_dict["plug_state"].lower() != plug_dict["plug_state_mustbe"].lower():
+                    self.logger.debug(plug_dict["type"] + " restored to " + plug_dict[
+                        "plug_state_mustbe"].lower() + " because velux has been closed")
+                    self.turn_on_off_plug(plug_number, plug_dict["plug_state_mustbe"].lower())
             # HEATER case
             if plug_dict["plug_state"].lower() == "on":
                 if plug_dict["type"] == "HEATER":
                     if self.__weather_dict["temp_avg"] < plug_dict["temp_ref"]:
-                        #TODO Update after 10 minutes minimum before last change
+                        # TODO Update after 10 minutes minimum before last change
                         self.turn_on_off_plug(plug_number, "on")
                     else:
                         self.turn_on_off_plug(plug_number, "off")

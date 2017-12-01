@@ -1,7 +1,8 @@
 {
   "2": {
     "plug_state": "off",
-    "type": "MOSQUITO",
+    "plug_state_mustbe" :"on",
+    "type": "LIGHT",
     "plug_id": 12325261,
     "description": "Prise n 2 - Chauffage ou Anti Moustique",
     "temp_ref": 20
