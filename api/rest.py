@@ -2,6 +2,7 @@ import json
 import logging
 import os
 from logging.handlers import RotatingFileHandler
+
 import jsondiff
 from flask import Flask, render_template, request, jsonify
 

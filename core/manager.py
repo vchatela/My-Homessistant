@@ -4,6 +4,8 @@ import logging
 import os
 from logging.handlers import RotatingFileHandler
 
+import myh_sensors.sensors as Myh_Sensors
+import myh_sensors.transmitters as Myh_Transmitters
 from core.database import MyHomessistantDatabase
 
 db_struct = {"temp_ref": 0, "plug_state": 1, "start_time": 2, "day_of_week": 3, "plug_type": 4, "plug_number": 5}
@@ -18,9 +20,11 @@ class Manager:
             __myh_dict = json.load(__myh_file_data)
             if not __myh_dict["app_state"].lower() == "on":
                 exit(0)
+        # Load HF Sensor
         with open(__sensor_file, 'r') as __sensor_file_data:
             __sensor_dict = json.load(__sensor_file_data)
             self.__radio_wiringpi_number = str(__sensor_dict["HF"])
+
         # Do work
         self.database = MyHomessistantDatabase()
         self.database.connection()
@@ -54,12 +58,9 @@ class Manager:
             self.database.close()
 
     def turn_on_off_plug(self, plug_number, new_state):
-        plug_id = str(self.__plugs_dict[plug_number]["plug_id"])
-        command = " ".join(
-            [str(os.path.join(os.environ["MYH_HOME"], "bin", "radioEmission")), self.__radio_wiringpi_number, plug_id,
-             "1", new_state.lower()])
-        self.logger.debug("Command launched : " + command)
-        os.system(command)
+        Myh_Transmitters.HF_transmitter(self.__plugs_dict[plug_number]["plug_id"],
+                                        self.__radio_wiringpi_number).turn_on_off_plug(new_state)
+        self.logger.debug("Plug " + plug_number + " has been turned " + new_state.lower())
         self.__plugs_dict[plug_number]["plug_state"] = new_state.lower()
         with open(self.__plugs_file, 'w') as f:
             json.dump(self.__plugs_dict, f)
@@ -104,7 +105,8 @@ class Manager:
             plug_dict = self.__plugs_dict[plug_number]
             # If here the plug matched for this rule
             # Turn off heater/mosquito if velux is open
-            if plug_dict["type"] in ["HEATER", "MOSQUITO"] and bool(self.__weather_dict["velux_open"]):
+            if plug_dict["type"] in ["HEATER", "MOSQUITO"] and Myh_Sensors.HallSensor(
+                    Myh_Sensors.hall_pin).is_velux_open():
                 if plug_dict["plug_state"].lower() == "on":
                     # TODO Send Android Notification - Plug must be ON but velux is open
                     # On notification : click to restart
@@ -112,7 +114,8 @@ class Manager:
                 self.turn_on_off_plug(plug_number, "off")
                 continue
             # If velux close : reapply state
-            elif plug_dict["type"] in ["HEATER", "MOSQUITO"] and not bool(self.__weather_dict["velux_open"]):
+            elif plug_dict["type"] in ["HEATER", "MOSQUITO"] and not Myh_Sensors.HallSensor(
+                    Myh_Sensors.hall_pin).is_velux_open():
                 if plug_dict["plug_state"].lower() != plug_dict["plug_state_mustbe"].lower():
                     self.logger.debug(plug_dict["type"] + " restored to " + plug_dict[
                         "plug_state_mustbe"].lower() + " because velux has been closed")
@@ -133,8 +136,17 @@ class Manager:
             else:
                 self.turn_on_off_plug(plug_number, "off")
 
+    def notify_if_raining(self):
+        if Myh_Sensors.RainSensor(Myh_Sensors.rain_pin).is_it_raining() and Myh_Sensors.HallSensor(
+                Myh_Sensors.hall_pin).is_velux_open():
+            # TODO Send notification !
+            self.logger.info("CLOSE VELUX QUICKLY !")
+
 
 if __name__ == "__main__":
     my_manager = Manager()
+    # Notify rain
+    my_manager.notify_if_raining()
+    # Programmation Rules
     my_manager.check_rules()
     my_manager.apply_actions()

@@ -9,6 +9,9 @@ class WeatherTest(unittest.TestCase):
     def test_hall(self):
         self.assertIn(self.app.is_velux_open(), [True, False])
 
+    def test_rain(self):
+        self.assertIn(self.app.is_it_raining(), [True, False])
+
     def test_in_temp(self):
         self.assertIsNotNone(self.app.get_average_temp())
 

@@ -2,116 +2,17 @@ import glob
 import json
 import logging
 import os
-import time
-from abc import ABCMeta, abstractmethod
 from logging.handlers import RotatingFileHandler
 
 import Adafruit_DHT
-import RPi.GPIO as GPIO
 import numpy
-import pyowm
 
+import myh_sensors.sensors as Myh_Sensors
 from core.database import MyHomessistantDatabase
 
 os.system('/sbin//modprobe w1-gpio')
 os.system('/sbin//modprobe w1-therm')
 MYH_HOME = os.environ["MYH_HOME"]
-with open(MYH_HOME + '/data/sensors.json') as sensors_file:
-    sensors_data = json.load(sensors_file)
-    GPIO_MODE = sensors_data["GPIO_MODE"]
-    am2302_pin = int(sensors_data["AM2032"])
-    hall_pin = int(sensors_data["A1120"])
-
-
-class HallSensor:
-    def __init__(self, pin):
-        self.pin = pin
-
-    def is_velux_open(self):
-        if GPIO_MODE == "BCM":
-            GPIO.setmode(GPIO.BCM)
-        else:
-            raise Exception("GPIO MODE %s not supported" % GPIO_MODE)
-        GPIO.setup(self.pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        if GPIO.input(self.pin):
-            return True
-        else:
-            return False
-
-
-class TemperatureSensorAbstract:
-    __metaclass__ = ABCMeta
-
-    @abstractmethod
-    def get_temperature(self):
-        raise NotImplementedError('Subclasses must override get_temperature()!')
-
-
-class AM2302TemperatureSensor(TemperatureSensorAbstract):
-    def __init__(self, model, pin):
-        self.model = model
-        self.pin = pin
-
-    def get_temperature(self):
-        try:
-            _, temperature = Adafruit_DHT.read_retry(self.model, self.pin)
-            return temperature
-        except:
-            return None
-
-    def get_humidity(self):
-        try:
-            humidity, _ = Adafruit_DHT.read_retry(self.model, self.pin)
-            return humidity
-        except:
-            return None
-
-
-class DS18B20TemperatureSensor(TemperatureSensorAbstract):
-    base_dir = '/sys/bus/w1/devices/'
-
-    def __init__(self, device_dir):
-        self.device_file = os.path.join(device_dir, 'w1_slave')
-
-    def get_temperature(self):
-        try:
-            lines = self.__read_temp_raw()
-            while lines[0].strip()[-3:] != 'YES':
-                time.sleep(0.2)
-                lines = self.__read_temp_raw()
-            equals_pos = lines[1].find('t=')
-            temp_c = None
-            if equals_pos != -1:
-                temp_string = lines[1][equals_pos + 2:]
-                temp_c = float(temp_string) / 1000.0
-            return temp_c
-        except:
-            return None
-
-    def __read_temp_raw(self):
-        with open(self.device_file, 'r') as device_file:
-            return device_file.readlines()
-
-    def __str__(self):
-        return self.__read_temp_raw()
-
-
-class OutdoorAPITemperatureSensor(TemperatureSensorAbstract):
-    def __init__(self):
-        observation = pyowm.OWM('124db9b65e41932220cdc2392bad7ebf').weather_at_place('Lescar,fr')
-        self.weather = observation.get_weather()
-
-    def get_temperature(self):
-        if 'temp' in self.weather.get_temperature('celsius'):
-            return self.weather.get_temperature('celsius')['temp']
-        else:
-            return None
-
-    def get_humidity(self):
-        try:
-            return self.weather.get_humidity()
-        except:
-            return None
 
 
 class Application:
@@ -165,17 +66,19 @@ class Application:
     ##Sensors
     def load_sensors(self):
         # DS18B20
-        for ds_sensor_dir in glob.glob(DS18B20TemperatureSensor.base_dir + '28*'):
-            self.sensors_list.append(DS18B20TemperatureSensor(ds_sensor_dir))
+        for ds_sensor_dir in glob.glob(Myh_Sensors.DS18B20TemperatureSensor.base_dir + '28*'):
+            self.sensors_list.append(Myh_Sensors.DS18B20TemperatureSensor(ds_sensor_dir))
         # AM 2302
-        self.sensors_list.append(AM2302TemperatureSensor(Adafruit_DHT.AM2302, am2302_pin))
+        self.sensors_list.append(Myh_Sensors.AM2302TemperatureSensor(Adafruit_DHT.AM2302, Myh_Sensors.am2302_pin))
         # Hall sensor
-        self.sensors_list.append(HallSensor(hall_pin))
+        self.sensors_list.append(Myh_Sensors.HallSensor(Myh_Sensors.hall_pin))
+        # Rain sensor
+        self.sensors_list.append(Myh_Sensors.RainSensor(Myh_Sensors.rain_pin))
 
     def get_average_temp(self):
         temp_list = []
         for sensor in self.sensors_list:
-            if "get_temperature" in dir(sensor):
+            if isinstance(sensor,Myh_Sensors.TemperatureSensorAbstract):
                 temp_tmp = sensor.get_temperature()
                 if temp_tmp is None:
                     continue
@@ -206,22 +109,21 @@ class Application:
 
     @staticmethod
     def get_out_temp():
-        out_sensor = OutdoorAPITemperatureSensor()
+        out_sensor = Myh_Sensors.OutdoorAPITemperatureSensor()
         return out_sensor.get_temperature()
 
     @staticmethod
     def get_out_humidity():
-        out_sensor = OutdoorAPITemperatureSensor()
+        out_sensor = Myh_Sensors.OutdoorAPITemperatureSensor()
         return out_sensor.get_humidity()
 
     # Files for flask api
-    def update_weather_data(self, temp_avg, temp_out, hum_avg, hum_out, heater_state, velux_open):
+    def update_weather_data(self, temp_avg, temp_out, hum_avg, hum_out, heater_state):
         self.__weather_dict["temp_avg"] = temp_avg
         self.__weather_dict["temp_out"] = temp_out
         self.__weather_dict["hum_avg"] = hum_avg
         self.__weather_dict["hum_out"] = hum_out
         self.__weather_dict["heater_state"] = heater_state
-        self.__weather_dict["velux_open"] = velux_open
         with open(self.__weather_file, 'w') as f:
             json.dump(self.__weather_dict, f)
 
@@ -240,10 +142,24 @@ class Application:
 
     def is_velux_open(self):
         for sensor in self.sensors_list:
-            if "is_velux_open" in dir(sensor):
+            if isinstance(sensor,Myh_Sensors.HallSensor):
                 is_open = sensor.is_velux_open()
-                self.logger.debug("Velux is open : " + str(is_open))
+                if is_open:
+                    self.logger.debug("Velux is open.")
+                else :
+                    self.logger.debug("Velux is close.")
                 return is_open
+        return None
+
+    def is_it_raining(self):
+        for sensor in self.sensors_list:
+            if isinstance(sensor,Myh_Sensors.RainSensor):
+                is_raining = sensor.is_it_raining()
+                if is_raining:
+                    self.logger.debug("Rain detected.")
+                else:
+                    self.logger.debug("No rain detected.")
+                return is_raining
         return None
 
 
@@ -266,5 +182,5 @@ if __name__ == "__main__":
     # Get Heater State
     heater_state = app.get_heater_state()
 
-    app.update_weather_data(temp_avg, temp_out, hum_avg, hum_out, heater_state, velux_state)
+    app.update_weather_data(temp_avg, temp_out, hum_avg, hum_out, heater_state)
     app.insert_weather(temp_avg, temp_out, hum_avg, hum_out, heater_state, velux_state)
