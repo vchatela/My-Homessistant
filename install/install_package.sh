@@ -17,6 +17,8 @@ pip install pyowm
 pip install rson
 # For rest API
 pip install jsondiff
+# For FCM
+pip install pyfcm
 
 # Install imported Libraries
 ## Adafruit Python DHT

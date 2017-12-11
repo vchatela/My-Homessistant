@@ -7,6 +7,7 @@ from logging.handlers import RotatingFileHandler
 import myh_sensors.sensors as Myh_Sensors
 import myh_sensors.transmitters as Myh_Transmitters
 from core.database import MyHomessistantDatabase
+from etc.fcm import NestFCMManager
 
 db_struct = {"temp_ref": 0, "plug_state": 1, "start_time": 2, "day_of_week": 3, "plug_type": 4, "plug_number": 5}
 
@@ -52,6 +53,9 @@ class Manager:
 
         self.logger.addHandler(console_handler)
         self.logger.addHandler(file_handler)
+
+        # FCM Handler
+        self.fcm_handler = NestFCMManager()
 
     def __del__(self):
         if hasattr(self, "database") and self.database:
@@ -108,7 +112,8 @@ class Manager:
             if plug_dict["type"] in ["HEATER", "MOSQUITO"] and Myh_Sensors.HallSensor(
                     Myh_Sensors.hall_pin).is_velux_open():
                 if plug_dict["plug_state"].lower() == "on":
-                    # TODO Send Android Notification - Plug must be ON but velux is open
+                    # Velux open + Heater on <=> fcm
+                    self.fcm_handler.sendMessageNonAdmin("Attention Velux !","Le chauffage doit s'allumer mais le velux est ouvert...")
                     # On notification : click to restart
                     self.logger.debug(plug_dict["type"] + " turned off because of velux open")
                 self.turn_on_off_plug(plug_number, "off")
@@ -139,7 +144,8 @@ class Manager:
     def notify_if_raining(self):
         if Myh_Sensors.RainSensor(Myh_Sensors.rain_pin).is_it_raining() and Myh_Sensors.HallSensor(
                 Myh_Sensors.hall_pin).is_velux_open():
-            # TODO Send notification !
+            # Velux open + rain <=> fcm
+            self.fcm_handler.sendMessageNonAdmin("Attention Pluie !","Velux ouvert et il pleut !")
             self.logger.info("CLOSE VELUX QUICKLY !")
 
 

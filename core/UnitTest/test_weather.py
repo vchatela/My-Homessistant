@@ -1,5 +1,7 @@
 import unittest
 import core.weather
+from etc.fcm import NestFCMManager
+
 
 class WeatherTest(unittest.TestCase):
     def setUp(self):
@@ -28,3 +30,10 @@ class WeatherTest(unittest.TestCase):
         state = self.app.get_heater_state()
         self.assertIsNotNone(state)
         self.assertIn(state,[0,1])
+
+class FCMTest(unittest.TestCase):
+    def setUp(self):
+        self.my_fcm = NestFCMManager()
+
+    def test_send(self):
+        self.my_fcm.sendMessageNonAdmin("Test Title", "Test Message")
