@@ -68,6 +68,18 @@ def compute():
     return str(deg_by_min.compute_deg_by_min())
 
 
+@app.route("/weather")
+def weather():
+    res = []
+    with open(os.path.join(os.environ["MYH_HOME"], "data", "weather.json"), 'r') as weather_file:
+        weather_dict = json.load(weather_file)
+    res.append(weather_dict["temp_avg"])
+    res.append(weather_dict["temp_out"])
+    res.append(weather_dict["hum_avg"])
+    res.append(weather_dict["hum_out"])
+    return '-'.join(str(e) for e in res)
+
+
 @app.route("/charts_dev")
 def charts_dev():
     if not 'day' in request.args:
